@@ -18,11 +18,14 @@ import * as os from 'node:os';
 import * as vscode from 'vscode';
 import { ChatGPTAPI as ChatGPTAPI3 } from '../chatgpt-4.7.2/index';
 import { ChatGPTAPI as ChatGPTAPI35 } from '../chatgpt-5.1.1/index';
+import { EventEmitter, Event } from "vscode";
+
 
 type LoginMethod = "GPT3 OpenAI API Key";
 type AuthType = "";
 
 export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
+	
 	private webView?: vscode.WebviewView;
 
 	public subscribeToResponse: boolean;
@@ -56,12 +59,15 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		this.subscribeToResponse = vscode.workspace.getConfiguration("chatgpt").get("response.showNotification") || false;
 		this.autoScroll = !!vscode.workspace.getConfiguration("chatgpt").get("response.autoScroll");
 		this.model = vscode.workspace.getConfiguration("chatgpt").get("gpt3.model") as string;
+		
+		
 
 		this.setMethod();
 		this.setChromeExecutablePath();
 		this.setProfilePath();
 		this.setProxyServer();
 		this.setAuthType();
+		;
 	}
 
 	public resolveWebviewView(
@@ -384,7 +390,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 				this.response = options.previousAnswer + this.response;
 			}
 
-			const hasContinuation = ((this.response.split("```").length) % 2) === 1;
+			const hasContinuation = ((this.response.split("```").length) % 2) === 0;
 
 			if (hasContinuation) {
 				this.response = this.response + " \r\n ```\r\n";

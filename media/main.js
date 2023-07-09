@@ -53,8 +53,59 @@
     const closeSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-license="isc-gnc" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`;
 
     const refreshSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-license="isc-gnc" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>`;
+    
+    const diffSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M12 20V4m-7 9h14"></path></svg>`;
 
-    // Handle messages sent from the extension to the webview
+
+    function insertAfter(newNode, referenceNode) {
+        referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+    }
+
+    // ... (previous code)
+
+    function createCodeBlockButtons(preCode) {
+        preCode.classList.add("input-background", "p-4", "pb-2", "block", "whitespace-pre", "overflow-x-scroll");
+        preCode.parentElement.classList.add("pre-code-element", "relative");
+
+        const buttonWrapper = document.createElement("no-export");
+        buttonWrapper.classList.add("code-actions-wrapper", "flex", "gap-3", "pr-2", "pt-1", "pb-1", "flex-wrap", "items-center", "justify-end", "rounded-t-lg", "input-background");
+
+        // Create copy to clipboard button
+        const copyButton = document.createElement("button");
+        copyButton.title = "Copy to clipboard";
+        copyButton.innerHTML = `${clipboardSvg} Copy`;
+        copyButton.classList.add("code-element-ext", "p-1", "pr-2", "flex", "items-center", "rounded-lg");
+
+        // Create insert button
+        const insertButton = document.createElement("button");
+        insertButton.title = "Insert the below code to the current file";
+        insertButton.innerHTML = `${insertSvg} Insert`;
+        insertButton.classList.add("edit-element-ext", "p-1", "pr-2", "flex", "items-center", "rounded-lg");
+
+        // Create diff button
+        const diffButton = document.createElement("button");
+        diffButton.title = "Show diff with the current file";
+        diffButton.innerHTML = `${diffSvg} Diff`;
+        diffButton.classList.add("diff-element-ext", "p-1", "pr-2", "flex", "items-center", "rounded-lg");
+
+        // Create new tab button
+        const newTabButton = document.createElement("button");
+        newTabButton.title = "Create a new file with the below code";
+        newTabButton.innerHTML = `${plusSvg} New`;
+        newTabButton.classList.add("new-code-element-ext", "p-1", "pr-2", "flex", "items-center", "rounded-lg");
+
+        buttonWrapper.append(copyButton, insertButton, newTabButton, diffButton);
+
+        if (preCode.parentNode.previousSibling) {
+            insertAfter(buttonWrapper, preCode.parentNode.previousSibling);
+        } else {
+            preCode.parentNode.parentElement.append(buttonWrapper);
+        }
+    }
+
+    
+
+
     window.addEventListener("message", (event) => {
         const message = event.data;
         const list = document.getElementById("qa-list");
@@ -104,77 +155,81 @@
                 }
                 break;
             case "addResponse":
-                let existingMessage = message.rawId && document.getElementById(message.id);
+                let existingMessage = document.getElementById(message.id);
                 let updatedValue = "";
-
+                console.log("Message ID: " + message.id);
+                //console.log("Message: " + event.data);
                 const unEscapeHtml = (unsafe) => {
                     return unsafe.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
                 };
 
                 if (!message.responseInMarkdown) {
-                    updatedValue = "```\r\n" + unEscapeHtml(message.value) + " \r\n ```";
+                    updatedValue = unEscapeHtml(message.value);
                 } else {
-                    updatedValue = message.value.split("```").length % 2 === 1 ? message.value : message.value + "\n\n```\n\n";
+                    updatedValue = message.value;
                 }
 
+                const wrappedCodeBlocks = [];
+                let inCodeBlock = false;
+                const lines = updatedValue.split('\n');
+                lines.forEach((line, index) => {
+                    if (line.startsWith("```")) {
+                        inCodeBlock = !inCodeBlock;
+                        if (!inCodeBlock && index !== lines.length - 1) {
+                            wrappedCodeBlocks.push("\n\n");
+                        }
+                    } else {
+                        if (inCodeBlock) {
+                            line = "    " + line;
+                        }
+                        wrappedCodeBlocks.push(line);
+                    }
+                });
+                updatedValue = wrappedCodeBlocks.join('\n');
+
                 const markedResponse = marked.parse(updatedValue);
+                const parser = new DOMParser();
+                const htmlDoc = parser.parseFromString(markedResponse, 'text/html');
+                htmlDoc.querySelectorAll('pre').forEach(preElement => {
+                    preElement.classList.add('pre-code-element', 'relative');
+                });
+                htmlDoc.querySelectorAll('code').forEach(codeElement => {
+                    codeElement.classList.add('hljs', 'language-python', 'input-background', 'p-4', 'pb-2', 'block', 'whitespace-pre', 'overflow-x-scroll');
+                });
+
+                htmlDoc.querySelectorAll("pre > code").forEach(createCodeBlockButtons);
+
+                const updatedMarkedResponse = htmlDoc.documentElement.innerHTML;
 
                 if (existingMessage) {
-                    existingMessage.innerHTML = markedResponse;
+                    existingMessage.innerHTML = updatedMarkedResponse;
                 } else {
                     list.innerHTML +=
                         `<div data-license="isc-gnc" class="p-4 self-end mt-4 pb-8 answer-element-ext">
-                        <h2 class="mb-5 flex">${aiSvg}ChatGPT</h2>
-                        <div class="result-streaming" id="${message.id}">${markedResponse}</div>
-                    </div>`;
+                            <h2 class="mb-5 flex">${aiSvg}ChatGPT</h2>
+                            <div class="result-streaming" id="${message.id}">${updatedMarkedResponse}</div>
+                        </div>`;
                 }
-
+                
+                
+                
+                
                 if (message.done) {
                     const preCodeList = list.lastChild.querySelectorAll("pre > code");
+                                      
+              
 
-                    preCodeList.forEach((preCode) => {
-                        preCode.classList.add("input-background", "p-4", "pb-2", "block", "whitespace-pre", "overflow-x-scroll");
-                        preCode.parentElement.classList.add("pre-code-element", "relative");
-
-                        const buttonWrapper = document.createElement("no-export");
-                        buttonWrapper.classList.add("code-actions-wrapper", "flex", "gap-3", "pr-2", "pt-1", "pb-1", "flex-wrap", "items-center", "justify-end", "rounded-t-lg", "input-background");
-
-                        // Create copy to clipboard button
-                        const copyButton = document.createElement("button");
-                        copyButton.title = "Copy to clipboard";
-                        copyButton.innerHTML = `${clipboardSvg} Copy`;
-
-                        copyButton.classList.add("code-element-ext", "p-1", "pr-2", "flex", "items-center", "rounded-lg");
-
-                        const insert = document.createElement("button");
-                        insert.title = "Insert the below code to the current file";
-                        insert.innerHTML = `${insertSvg} Insert`;
-
-                        insert.classList.add("edit-element-ext", "p-1", "pr-2", "flex", "items-center", "rounded-lg");
-
-                        const newTab = document.createElement("button");
-                        newTab.title = "Create a new file with the below code";
-                        newTab.innerHTML = `${plusSvg} New`;
-
-                        newTab.classList.add("new-code-element-ext", "p-1", "pr-2", "flex", "items-center", "rounded-lg");
-
-                        buttonWrapper.append(copyButton, insert, newTab);
-
-                        if (preCode.parentNode.previousSibling) {
-                            preCode.parentNode.parentElement.insertAfter(buttonWrapper, preCode.parentElement.previousSibling);
-                        } else {
-                            preCode.parentNode.parentElement.append(buttonWrapper);
-                        }
-                    });
-
-                    existingMessage = document.getElementById(message.id);
-                    existingMessage.classList.remove("result-streaming");
+                    if (existingMessage) {
+                        existingMessage.classList.remove("result-streaming");
+                  
+                    }
+                    
                 }
 
-                if (message.autoScroll && (message.done || markedResponse.endsWith("\n"))) {
+                if (message.autoScroll) {
                     list.lastChild?.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
                 }
-
+                
                 break;
             case "addError":
                 const messageValue = message.value || "An error occurred. If this issue persists please clear your session token with `ChatGPT: Reset session` command and/or restart your Visual Studio Code. If you still experience issues, it may be due to outage on https://openai.com services.";
@@ -385,6 +440,19 @@
 
             return;
         }
+    
+        if (targetButton?.classList?.contains("diff-element-ext")) {
+            e.preventDefault();
+            vscode.postMessage({
+                type: "showDiff",
+                value: targetButton.parentElement?.nextElementSibling?.lastChild?.textContent,
+            });
+
+            return;
+        }
+
+    
+    
     });
 
 })();

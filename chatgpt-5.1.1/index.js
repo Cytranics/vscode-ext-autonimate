@@ -263,16 +263,19 @@ Current date: ${currentDate}`;
                   if (response.id) {
                     result.id = response.id;
                   }
-                  if ((_a2 = response == null ? void 0 : response.choices) == null ? void 0 : _a2.length) {
+                  if (((_a2 = response) === null ? void 0 : _a2.choices) && response.choices.length) {
                     const delta = response.choices[0].delta;
                     result.delta = delta.content;
-                    if (delta == null ? void 0 : delta.content)
+                    if (delta && delta.content) {
                       result.text += delta.content;
+                    }
                     result.detail = response;
-                    if (delta.role) {
+                    if (delta && delta.role) {
                       result.role = delta.role;
                     }
-                    onProgress == null ? void 0 : onProgress(result);
+                    if (onProgress) {
+                      onProgress(result);
+                    }
                   }
                 } catch (err) {
                   console.warn("OpenAI stream SEE event unexpected error", err);
@@ -302,10 +305,10 @@ Current date: ${currentDate}`;
             if (this._debug) {
               console.log(response);
             }
-            if (response == null ? void 0 : response.id) {
+            if (response === null ? void 0 : response.id) {
               result.id = response.id;
             }
-            if ((_a = response == null ? void 0 : response.choices) == null ? void 0 : _a.length) {
+            if ((_a = response === null ? void 0 : response.choices) === null ? void 0 : _a.length) {
               const message2 = response.choices[0].message;
               result.text = message2.content;
               if (message2.role) {
@@ -315,7 +318,7 @@ Current date: ${currentDate}`;
               const res2 = response;
               return reject(
                 new Error(
-                  `OpenAI error: ${((_b = res2 == null ? void 0 : res2.detail) == null ? void 0 : _b.message) || (res2 == null ? void 0 : res2.detail) || "unknown"}`
+                  `OpenAI error: ${((_b = res2 === null || res2 === void 0 ? void 0 : res2.detail) === null || _b === void 0 ? void 0 : _b.message) || (res2 === null || res2 === void 0 ? void 0 : res2.detail) || "unknown"}`
                 )
               );
             }

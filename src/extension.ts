@@ -110,6 +110,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		if (e.affectsConfiguration('chatgpt.promptPrefix') || e.affectsConfiguration('chatgpt.gpt3.generateCode-enabled') || e.affectsConfiguration('chatgpt.gpt3.model') || e.affectsConfiguration('chatgpt.method')) {
 			setContext();
 		}
+	
+		
+	
 	});
 
 	const adhocCommand = vscode.commands.registerCommand("vscode-chatgpt.adhoc", async () => {
