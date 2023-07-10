@@ -174,11 +174,13 @@
                 const wrappedCodeBlocks = [];
                 let inCodeBlock = false;
                 const lines = updatedValue.split('\n');
+                
                 lines.forEach((line, index) => {
+                    line = line.trim();
                     if (line.startsWith("```")) {
                         inCodeBlock = !inCodeBlock;
                         if (!inCodeBlock && index !== lines.length - 1) {
-                            wrappedCodeBlocks.push("\n\n");
+                            wrappedCodeBlocks.push("</p>\n\n<p>");
                         }
                     } else {
                         if (inCodeBlock) {
@@ -187,8 +189,11 @@
                         wrappedCodeBlocks.push(line);
                     }
                 });
-                updatedValue = wrappedCodeBlocks.join('\n');
-
+                if (inCodeBlock) {
+                    wrappedCodeBlocks.push("</p>");
+                }
+                updatedValue = "<p>" + wrappedCodeBlocks.join('\n') + "</p>";
+                
                 const markedResponse = marked.parse(updatedValue);
                 const parser = new DOMParser();
                 const htmlDoc = parser.parseFromString(markedResponse, 'text/html');
@@ -198,10 +203,11 @@
                 htmlDoc.querySelectorAll('code').forEach(codeElement => {
                     codeElement.classList.add('hljs', 'language-python', 'input-background', 'p-4', 'pb-2', 'block', 'whitespace-pre', 'overflow-x-scroll');
                 });
-
+                
                 htmlDoc.querySelectorAll("pre > code").forEach(createCodeBlockButtons);
                 list.lastChild?.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
                 const updatedMarkedResponse = htmlDoc.documentElement.innerHTML;
+                
 
                 if (existingMessage) {
                     console.log("Is this happening for multiple messages");

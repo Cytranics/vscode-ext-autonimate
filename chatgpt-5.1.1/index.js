@@ -130,6 +130,7 @@ var ChatGPTAPI = class {
       ...completionParams
     };
     this._systemMessage = systemPrompt;
+    this._systemAppendMessage = systemAppendPrompt;
     console.log('this._systemMessage:', this._systemMessage);
     if (this._systemMessage === void 0) {
       const currentDate = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
@@ -272,6 +273,7 @@ var ChatGPTAPI = class {
                   if ((_a2 = response == null ? void 0 : response.choices) == null ? void 0 : _a2.length) {
                     const delta = response.choices[0].delta;
                     result.delta = delta.content;
+                    
                     if (delta == null ? void 0 : delta.content)
                       result.text += delta.content;
                     result.detail = response;
@@ -358,6 +360,7 @@ var ChatGPTAPI = class {
   }
   async _buildMessages(text, opts) {
     const { systemMessage = this._systemMessage } = opts;
+    const { systemAppendMessage = this.systemAppendMessage } = opts;
     let { parentMessageId } = opts;
     const userLabel = USER_LABEL_DEFAULT;
     const assistantLabel = ASSISTANT_LABEL_DEFAULT;
@@ -372,7 +375,7 @@ var ChatGPTAPI = class {
     let nextMessages = text ? messages.concat([
       {
         role: "user",
-        content: text, // Added systemAppendPrompt here
+        content: text,
         name: opts.name
       }
     ]) : messages;
@@ -408,6 +411,7 @@ ${message.content}`]);
         ...nextMessages.slice(systemMessageOffset)
       ]);
       parentMessageId = parentMessage.parentMessageId;
+      console.log("History", nextMessages);
     } while (true);
     return { messages };
   }

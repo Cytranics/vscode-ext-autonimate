@@ -31,6 +31,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	);
 
+
+
 	const freeText = vscode.commands.registerCommand("vscode-chatgpt.freeText", async () => {
 		const value = await vscode.window.showInputBox({
 			prompt: "Ask anything...",

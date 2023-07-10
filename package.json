@@ -259,8 +259,6 @@
             "Various text & code completion models are supported including ChatGPT Turbo models. \n\n- GPT3.5 -> i.e. `'chatgpt.gpt3.model': 'gpt-3.5-turbo'`\n\n- GPT3 -> i.e. `'chatgpt.gpt3.model': 'text-davinci-003'`\n\n- Codex -> i.e.`'chatgpt.gpt3.model': 'code-davinci-002'`"
           ]
         },
-       
-       
         "chatgpt.proxyServer": {
           "type": "string",
           "default": null,
@@ -380,17 +378,17 @@
           "markdownDescription": "OpenAI API key. [Get your API Key from OpenAI](https://beta.openai.com/account/api-keys). \n\n**Please enable OpenAI API Key method to use this setting.**",
           "order": 30
         },
-      "chatgpt.gpt3.apiBaseUrl": {
-        "type": "string",
-        "default": "https://api.openai.com",
-        "markdownDescription": "Optional override for the OpenAI API base URL. If you customize it, please make sure you have the same format. e.g. starts with `https://` without a trailing slash. The completions endpoint suffix is added internally, e.g. for reference: `${apiBaseUrl}/v1/completions`",
-        "order": 31
-      },
-      "chatgpt.gpt3.azureBaseURL": {
-        "type": "string",
-        "markdownDescription": "Copy and paste your entire Azure URL with the api-version.",
-        "order": 32
-      },
+        "chatgpt.gpt3.apiBaseUrl": {
+          "type": "string",
+          "default": "https://api.openai.com",
+          "markdownDescription": "Optional override for the OpenAI API base URL. If you customize it, please make sure you have the same format. e.g. starts with `https://` without a trailing slash. The completions endpoint suffix is added internally, e.g. for reference: `${apiBaseUrl}/v1/completions`",
+          "order": 31
+        },
+        "chatgpt.gpt3.azureBaseURL": {
+          "type": "string",
+          "markdownDescription": "Copy and paste your entire Azure URL with the api-version.",
+          "order": 32
+        },
         "chatgpt.gpt3.organization": {
           "type": "string",
           "markdownDescription": "OpenAI Organization ID. [Documentation](https://beta.openai.com/docs/api-reference/requesting-organization). \n\n**Please enable OpenAI API Key method to use this setting.**",
@@ -431,7 +429,6 @@
             "16K version of `gpt-3.5-turbo`.",
             "16K version of `gpt-3.5-turbo` from June 13th."
           ]
-    
         },
         "chatgpt.gpt3.maxTokens": {
           "type": "number",
@@ -512,6 +509,7 @@
   },
   "dependencies": {
     "delay": "^5.0.0",
+    "diff": "^5.1.0",
     "eventsource-parser": "^0.1.0",
     "gpt3-tokenizer": "^1.1.5",
     "isomorphic-fetch": "^3.0.0",

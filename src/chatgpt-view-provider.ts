@@ -24,6 +24,8 @@ import { EventEmitter, Event } from "vscode";
 type LoginMethod = "API Key";
 type AuthType = "";
 
+
+
 export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 	private webView?: vscode.WebviewView;
 
@@ -134,18 +136,53 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 					});
 					break;
 				case 'openSettings':
-					vscode.commands.executeCommand('workbench.action.openSettings', "@ext:autonimate.vscode-chatgpt chatgpt.");
+					vscode.commands.executeCommand('workbench.action.openSettings', "@ext:chatgpt.vscode-chatgpt chatgpt.");
 
 					this.logEvent("settings-opened");
 					break;
 				case 'openSettingsPrompt':
-					vscode.commands.executeCommand('workbench.action.openSettings', "@ext:autonimate.vscode-chatgpt promptPrefix");
+					vscode.commands.executeCommand('workbench.action.openSettings', "@ext:chatgpt.vscode-chatgpt promptPrefix");
 
 					this.logEvent("settings-prompt-opened");
 					break;
 				case 'showConversation':
 					/// ...
 					break;
+
+				case 'showDiff':
+					const activeEditor = vscode.window.activeTextEditor;
+					if (activeEditor) {
+						const documentText = activeEditor.document.getText();
+						const diffValue = data.value;
+
+						// Use a diff library or implement your own diff logic here
+						// For example, using the 'diff' npm package:
+						const diff = require('diff');
+						const changes = diff.diffLines(documentText, diffValue);
+
+						// Format and display the diff result
+						let result = '';
+						changes.forEach((change: any) => {
+							if (change.added) {
+								result += '+ ' + change.value;
+							} else if (change.removed) {
+								result += '- ' + change.value;
+							} else {
+								result += '  ' + change.value;
+							}
+						});
+
+						// Open a new document with the diff result
+						const diffDocument = await vscode.workspace.openTextDocument({
+							content: result,
+							language: 'plaintext'
+						});
+						vscode.window.showTextDocument(diffDocument);
+					}
+
+					this.logEvent("code-diffed");
+					break;
+
 				case "stopGenerating":
 					this.stopGenerating();
 					break;
@@ -181,6 +218,8 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 	public setProxyServer(): void {
 		this.proxyServer = vscode.workspace.getConfiguration("chatgpt").get("proxyServer");
 	}
+
+	
 
 	public setMethod(): void {
 		this.loginMethod = vscode.workspace.getConfiguration("chatgpt").get("method") as LoginMethod;
@@ -344,7 +383,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 			// Add prompt prefix to the code if there was a code block selected
 			question = `${question}${language ? ` (The following code is in ${language} programming language)` : ''}: ${code} Response Format:` + this.systemAppendPrompt;
 		}
-		return question + "\r\n";
+		return question + ' Response Format: ' + this.systemAppendPrompt + '\r\n';
 	}
 
 	public async sendApiRequest(prompt: string, options: { command: string, code?: string, previousAnswer?: string, language?: string; }) {
@@ -511,6 +550,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		const vendorMarkedJs = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'vendor', 'marked.min.js'));
 		const vendorTailwindJs = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'vendor', 'tailwindcss.3.2.4.min.js'));
 		const vendorTurndownJs = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'vendor', 'turndown.js'));
+	
 
 		const nonce = this.getRandomId();
 
