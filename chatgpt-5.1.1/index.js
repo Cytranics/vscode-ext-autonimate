@@ -1,31 +1,3 @@
-// Adapted from https://github.com/transitive-bullshit/chatgpt-api
-
-/**
- * 
- * MIT License
-
-Copyright (c) 2023 Travis Fischer
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
- */
-
-// src/chatgpt-api.ts
 import Keyv from "keyv";
 import pTimeout from "p-timeout";
 import QuickLRU from "quick-lru";
@@ -71,7 +43,7 @@ async function fetchSSE(url, options, fetch2 = fetch) {
     } catch (err) {
       reason = res.statusText;
     }
-    const msg = `ChatGPT error ${res.status}: ${reason}`;
+    const msg = `API Error: ${res.status}: ${reason}`;
     const error = new ChatGPTError(msg, { cause: res });
     error.statusCode = res.status;
     error.statusText = res.statusText;
@@ -103,9 +75,9 @@ async function fetchSSE(url, options, fetch2 = fetch) {
 }
 
 // src/chatgpt-api.ts
-var CHATGPT_MODEL = "gpt-3.5-turbo";
-var USER_LABEL_DEFAULT = "User";
-var ASSISTANT_LABEL_DEFAULT = "ChatGPT";
+var CHATGPT_MODEL = "gpt-3.5-turbo-16k";
+var USER_LABEL_DEFAULT = "user";
+var ASSISTANT_LABEL_DEFAULT = "assistant";
 var ChatGPTAPI = class {
   /**
    * Creates a new client wrapper around OpenAI's chat completion API, mimicing the official ChatGPT webapp's functionality as closely as possible.
@@ -125,25 +97,31 @@ var ChatGPTAPI = class {
   constructor(opts) {
     const {
       apiKey,
-      apiBaseUrl = "https://api.openai.com",
+      apiBaseUrl = "",
+      azureBaseURL,
       organization,
       debug = false,
       messageStore,
+      provider,
       completionParams,
       systemMessage,
+      systemPrompt = "",
+      systemPromptAppend = "",
       maxModelTokens = 4e3,
       maxResponseTokens = 1e3,
       getMessageById,
       upsertMessage,
       fetch: fetch2 = fetch
     } = opts;
+    console.log('azureBaseURL:', azureBaseURL);
     this._apiKey = apiKey;
-    this._apiBaseUrl = apiBaseUrl;
+    this._apiBaseUrl = azureBaseURL ? azureBaseURL : apiBaseUrl; // Prioritize azureBaseURL if provided
+    this._isAzure = !!azureBaseURL; // Add this line
     this._organization = organization;
     this._debug = !!debug;
     this._fetch = fetch2;
     this._completionParams = {
-      model: CHATGPT_MODEL,
+      model: provider?.model || CHATGPT_MODEL,
       temperature: 0.8,
       top_p: 1,
       presence_penalty: 1,
@@ -152,9 +130,7 @@ var ChatGPTAPI = class {
     this._systemMessage = systemMessage;
     if (this._systemMessage === void 0) {
       const currentDate = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-      this._systemMessage = `You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible.
-Knowledge cutoff: 2021-09-01
-Current date: ${currentDate}`;
+      this._systemMessage = `${systemPrompt}. Knowledge Cutoff: Sept 2021, Current date: ${currentDate}.`;
     }
     this._maxModelTokens = maxModelTokens;
     this._maxResponseTokens = maxResponseTokens;
@@ -168,7 +144,7 @@ Current date: ${currentDate}`;
       });
     }
     if (!this._apiKey) {
-      throw new Error("OpenAI missing required apiKey");
+      throw new Error("Missing API Key.");
     }
     if (!this._fetch) {
       throw new Error("Invalid environment; fetch is not defined");
@@ -191,6 +167,8 @@ Current date: ${currentDate}`;
    * @param opts.parentMessageId - Optional ID of the previous message in the conversation (defaults to `undefined`)
    * @param opts.messageId - Optional ID of the message to send (defaults to a random UUID)
    * @param opts.systemMessage - Optional override for the chat "system message" which acts as instructions to the model (defaults to the ChatGPT system message)
+   * @param systemPrompt - Optional pre-defined text that will be automatically included at the beginning of each API call.
+   * @param systemPromptAppend - Optional pre-defined text that will be automatically included at the end of each API call, after your code.
    * @param opts.timeoutMs - Optional timeout in milliseconds (defaults to no timeout)
    * @param opts.onProgress - Optional callback which will be invoked every time the partial response is updated
    * @param opts.abortSignal - Optional callback used to abort the underlying `fetch` call using an [AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)
@@ -230,20 +208,38 @@ Current date: ${currentDate}`;
     const responseP = new Promise(
       async (resolve, reject) => {
         var _a, _b;
-        const url = `${this._apiBaseUrl}/v1/chat/completions`;
+        console.log('Before:', this._isAzure, this._apiBaseUrl);
+
+        const url = this._isAzure
+          ? `${this._apiBaseUrl}`
+          : `${this._apiBaseUrl}/v1/chat/completions`;
+
+        console.log('After:', url);
+
+        // Debug log: URL
+        console.log(`Request URL: ${url}`);
         const headers = {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this._apiKey}`
+          "Content-Type": "application/json"
         };
-        if (this._organization) {
-          headers["OpenAI-Organization"] = this._organization;
+
+        if (this._isAzure) {
+          headers["api-key"] = this._apiKey;
+        } else {
+          headers.Authorization = `Bearer ${this._apiKey}`;
+          if (this._organization) {
+            headers["OpenAI-Organization"] = this._organization;
+          }
         }
+        // Debug log: Headers
+        console.log('Request Headers:', headers);
         const body = {
           ...this._completionParams,
           ...completionParams,
           messages,
           stream
         };
+        // Debug log: Body
+    
         if (stream) {
           fetchSSE(
             url,
@@ -254,31 +250,35 @@ Current date: ${currentDate}`;
               signal: abortSignal,
               onMessage: (data) => {
                 var _a2;
+            
                 if (data === "[DONE]") {
-                  result.text = result.text.trim();
+                  
+                  result.text = "done";
                   return resolve(result);
                 }
                 try {
                   const response = JSON.parse(data);
+                  
+                  if (response.choices[0].finish_reason == "stop") {
+                    result.text = "done";
+                    return resolve(result);
+                  }
                   if (response.id) {
                     result.id = response.id;
                   }
-                  if (((_a2 = response) === null ? void 0 : _a2.choices) && response.choices.length) {
+                  if ((_a2 = response == null ? void 0 : response.choices) == null ? void 0 : _a2.length) {
                     const delta = response.choices[0].delta;
                     result.delta = delta.content;
-                    if (delta && delta.content) {
+                    if (delta == null ? void 0 : delta.content)
                       result.text += delta.content;
-                    }
                     result.detail = response;
-                    if (delta && delta.role) {
+                    if (delta.role) {
                       result.role = delta.role;
                     }
-                    if (onProgress) {
-                      onProgress(result);
-                    }
+                    onProgress == null ? void 0 : onProgress(result);
                   }
                 } catch (err) {
-                  console.warn("OpenAI stream SEE event unexpected error", err);
+                  console.warn("API stream SEE event unexpected error", err);
                   return reject(err);
                 }
               }
@@ -341,7 +341,7 @@ Current date: ${currentDate}`;
       }
       return pTimeout(responseP, {
         milliseconds: timeoutMs,
-        message: "OpenAI timed out waiting for response"
+        message: "API timed out waiting for response"
       });
     } else {
       return responseP;
@@ -369,7 +369,7 @@ Current date: ${currentDate}`;
     let nextMessages = text ? messages.concat([
       {
         role: "user",
-        content: text,
+        content: text + opts.systemPromptAppend, // Added systemPromptAppend here
         name: opts.name
       }
     ]) : messages;

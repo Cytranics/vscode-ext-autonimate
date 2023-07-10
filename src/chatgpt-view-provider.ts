@@ -21,11 +21,10 @@ import { ChatGPTAPI as ChatGPTAPI35 } from '../chatgpt-5.1.1/index';
 import { EventEmitter, Event } from "vscode";
 
 
-type LoginMethod = "GPT3 OpenAI API Key";
+type LoginMethod = "API Key";
 type AuthType = "";
 
 export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
-	
 	private webView?: vscode.WebviewView;
 
 	public subscribeToResponse: boolean;
@@ -35,6 +34,9 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 	public chromiumPath?: string;
 	public profilePath?: string;
 	public model?: string;
+	public systemPrompt: string;
+	public systemAppendPrompt: string;
+
 
 	private apiGpt3?: ChatGPTAPI3;
 	private apiGpt35?: ChatGPTAPI35;
@@ -59,8 +61,8 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		this.subscribeToResponse = vscode.workspace.getConfiguration("chatgpt").get("response.showNotification") || false;
 		this.autoScroll = !!vscode.workspace.getConfiguration("chatgpt").get("response.autoScroll");
 		this.model = vscode.workspace.getConfiguration("chatgpt").get("gpt3.model") as string;
-		
-		
+		this.systemPrompt = vscode.workspace.getConfiguration("chatgpt").get("systemPrompt") || '';
+		this.systemAppendPrompt = vscode.workspace.getConfiguration("chatgpt").get("systemAppendPrompt") || '';
 
 		this.setMethod();
 		this.setChromeExecutablePath();
@@ -242,6 +244,11 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 
 		const state = this.context.globalState;
 		const configuration = vscode.workspace.getConfiguration("chatgpt");
+		const apiBaseUrl: string | undefined = vscode.workspace.getConfiguration("chatgpt").get("gpt3.apiBaseUrl");
+		const azureBaseUrl: string | undefined = vscode.workspace.getConfiguration("chatgpt").get("gpt3.azureBaseURL");
+
+		// Prioritize azureBaseUrl if not blank, otherwise use apiBaseUrl
+		const selectedBaseUrl = azureBaseUrl && azureBaseUrl.trim() !== '' ? azureBaseUrl : apiBaseUrl;
 
 		if (this.useGpt3) {
 			if ((this.isGpt35Model && !this.apiGpt35) || (!this.isGpt35Model && !this.apiGpt3) || modelChanged) {
@@ -260,8 +267,8 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 						} else if (choice === "Store in session (Recommended)") {
 							await vscode.window
 								.showInputBox({
-									title: "Store OpenAI API Key in session",
-									prompt: "Please enter your OpenAI API Key to store in your session only. This option won't persist the token on your settings.json file. You may need to re-enter after restarting your VS-Code",
+									title: "Store Azure/OpenAI API Key in session",
+									prompt: "Please enter your API Key to store in your session only.",
 									ignoreFocusOut: true,
 									placeHolder: "API Key",
 									value: apiKey || ""
@@ -283,7 +290,8 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 					this.apiGpt35 = new ChatGPTAPI35({
 						apiKey,
 						fetch: fetch,
-						apiBaseUrl: apiBaseUrl?.trim() || undefined,
+						apiBaseUrl: apiBaseUrl,
+						azureBaseURL: azureBaseUrl,
 						organization,
 						completionParams: {
 							model: this.model,
@@ -292,11 +300,15 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 							top_p,
 						}
 					});
+					
+					
+					
 				} else {
 					this.apiGpt3 = new ChatGPTAPI3({
 						apiKey,
 						fetch: fetch,
-						apiBaseUrl: apiBaseUrl?.trim() || undefined,
+						apiBaseUrl: apiBaseUrl,
+					
 						organization,
 						completionParams: {
 							model: this.model,
@@ -305,6 +317,9 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 							top_p,
 						}
 					});
+					
+					
+					
 				}
 			}
 		}

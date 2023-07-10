@@ -54,6 +54,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		context.globalState.update("chatgpt-clearance-token", null);
 		context.globalState.update("chatgpt-user-agent", null);
 		context.globalState.update("chatgpt-gpt3-apiKey", null);
+		
 		provider?.clearSession();
 	});
 
@@ -89,21 +90,29 @@ export async function activate(context: vscode.ExtensionContext) {
 		if (e.affectsConfiguration('chatgpt.method')) {
 			provider.setMethod();
 		}
-
-		if (e.affectsConfiguration('chatgpt.authenticationType')) {
-			provider.setAuthType();
+		if (e.affectsConfiguration('chatgpt.systemPrompt')) {
+			provider.systemPrompt = vscode.workspace.getConfiguration("chatgpt").get("systemPrompt") || '';
 		}
+
+		if (e.affectsConfiguration('chatgpt.systemAppendPrompt')) {
+			provider.systemAppendPrompt = vscode.workspace.getConfiguration("chatgpt").get("systemAppendPrompt") || '';
+		}
+
+
 
 		if (e.affectsConfiguration('chatgpt.gpt3.model')) {
 			provider.model = vscode.workspace.getConfiguration("chatgpt").get("gpt3.model");
 		}
 
-		if (e.affectsConfiguration('chatgpt.gpt3.apiBaseUrl')
-			|| e.affectsConfiguration('chatgpt.gpt3.model')
-			|| e.affectsConfiguration('chatgpt.gpt3.organization')
-			|| e.affectsConfiguration('chatgpt.gpt3.maxTokens')
-			|| e.affectsConfiguration('chatgpt.gpt3.temperature')
-			|| e.affectsConfiguration('chatgpt.gpt3.top_p')) {
+		if (
+			e.affectsConfiguration("chatgpt.gpt3.apiBaseUrl") ||
+			e.affectsConfiguration("chatgpt.gpt3.azureBaseURL") ||
+			e.affectsConfiguration("chatgpt.gpt3.model") ||
+			e.affectsConfiguration("chatgpt.gpt3.organization") ||
+			e.affectsConfiguration("chatgpt.gpt3.maxTokens") ||
+			e.affectsConfiguration("chatgpt.gpt3.temperature") ||
+			e.affectsConfiguration("chatgpt.gpt3.top_p")
+		) {
 			provider.prepareConversation(true);
 		}
 

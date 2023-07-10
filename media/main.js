@@ -109,6 +109,10 @@
     window.addEventListener("message", (event) => {
         const message = event.data;
         const list = document.getElementById("qa-list");
+        if (message.value === "done")  {
+            return;
+        }
+
 
         switch (message.type) {
             case "showInProgress":
@@ -157,8 +161,6 @@
             case "addResponse":
                 let existingMessage = document.getElementById(message.id);
                 let updatedValue = "";
-                console.log("Message ID: " + message.id);
-                //console.log("Message: " + event.data);
                 const unEscapeHtml = (unsafe) => {
                     return unsafe.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
                 };
@@ -198,10 +200,11 @@
                 });
 
                 htmlDoc.querySelectorAll("pre > code").forEach(createCodeBlockButtons);
-
+                list.lastChild?.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
                 const updatedMarkedResponse = htmlDoc.documentElement.innerHTML;
 
                 if (existingMessage) {
+                    console.log("Is this happening for multiple messages");
                     existingMessage.innerHTML = updatedMarkedResponse;
                 } else {
                     list.innerHTML +=
@@ -211,20 +214,7 @@
                         </div>`;
                 }
                 
-                
-                
-                
-                if (message.done) {
-                    const preCodeList = list.lastChild.querySelectorAll("pre > code");
-                                      
-              
-
-                    if (existingMessage) {
-                        existingMessage.classList.remove("result-streaming");
-                  
-                    }
-                    
-                }
+           
 
                 if (message.autoScroll) {
                     list.lastChild?.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });

@@ -1,6 +1,6 @@
 {
   "name": "vscode-chatgpt",
-  "publisher": "YOUR_PUBLISHER_NAME",
+  "publisher": "Autonimate Ltd",
   "displayName": "vscode-chatgpt",
   "icon": "images/ai-logo.png",
   "description": "vscode-chatgpt",
@@ -158,7 +158,7 @@
     "commands": [
       {
         "command": "vscode-chatgpt.freeText",
-        "title": "ChatGPT: Ask anything"
+        "title": "Autonimate: Ask Anything!"
       },
       {
         "command": "vscode-chatgpt.clearSession",
@@ -242,56 +242,30 @@
       ]
     },
     "configuration": {
-      "title": "ChatGPT",
+      "title": "Autonimate",
       "properties": {
         "chatgpt.method": {
           "type": "string",
           "enum": [
-            "GPT3 OpenAI API Key"
+            "API Key"
           ],
-          "default": "GPT3 OpenAI API Key",
+          "default": "API Key",
           "markdownDescription": "Choose your integration preference.",
           "order": 1,
           "enumItemLabels": [
-            "Use OpenAI API key integration"
+            "API Key"
           ],
           "markdownEnumDescriptions": [
             "Various text & code completion models are supported including ChatGPT Turbo models. \n\n- GPT3.5 -> i.e. `'chatgpt.gpt3.model': 'gpt-3.5-turbo'`\n\n- GPT3 -> i.e. `'chatgpt.gpt3.model': 'text-davinci-003'`\n\n- Codex -> i.e.`'chatgpt.gpt3.model': 'code-davinci-002'`"
           ]
         },
-        "chatgpt.authenticationType": {
-          "type": "string",
-          "enum": [
-            "OpenAI Authentication",
-            "Google Authentication",
-            "Microsoft Authentication"
-          ],
-          "default": "OpenAI Authentication",
-          "markdownDescription": "Choose your login type to autofill the provided email/password in the authentication flow. \n\n - `OpenAI Authentication` Standard authentication method. Use this if you signed up using your email address instead of Google/Microsoft authentication. \n\n - `Google Authentication` Use Google Authentication to login to OpenAI \n\n - `Microsoft Authentication` Use Microsoft Authentication to login to OpenAI",
-          "order": 2
-        },
-        "chatgpt.emailAddress": {
-          "type": "string",
-          "default": null,
-          "description": "[Optional] Your openai.com login email address. Provide this if you want to auto-fill your email address during autologin. You don't have to provide this if you want to fill it during login.",
-          "order": 3
-        },
-        "chatgpt.password": {
-          "type": "string",
-          "default": null,
-          "description": "[Optional] Your openai.com login password. Provide this if you want to auto-fill your password during autologin. You don't have to provide this if you want to fill it during login.",
-          "order": 4
-        },
+       
+       
         "chatgpt.proxyServer": {
           "type": "string",
           "default": null,
           "markdownDescription": "[Optional] The proxy server you'd like to use. Supports HTTP proxies only, don't provide the protocol in the setting. Format example: \n\n `authenticated`:`myUsername:myPassword@my.proxy.com:3001` \n\n `anonymous`: `204.137.172.37:999` \n\n **Only available for `Browser Auto-login` method**",
           "order": 5
-        },
-        "chatgpt.chromiumPath": {
-          "type": "string",
-          "markdownDescription": "The executable path of your Chromium-based browser. i.e. `Chrome`, `Edge` etc. \n\n Unless you override, we use the default paths per Operating System for `Chrome`. \n\n **Windows**\n C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe \n\n **MAC**\n /Applications/Google Chrome.app/Contents/MacOS/Google Chrome \n\n You can use Chromium based Edge as well. e.g. \n\n **Windows Edge**\n C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe \n\n **You can find the executable path for your preferred browser by going to these URLs: `chrome://version` or `edge://version`**",
-          "order": 6
         },
         "chatgpt.gpt3.generateCode-enabled": {
           "type": "boolean",
@@ -406,94 +380,106 @@
           "markdownDescription": "OpenAI API key. [Get your API Key from OpenAI](https://beta.openai.com/account/api-keys). \n\n**Please enable OpenAI API Key method to use this setting.**",
           "order": 30
         },
-        "chatgpt.gpt3.apiBaseUrl": {
-          "type": "string",
-          "default": "https://api.openai.com",
-          "markdownDescription": "Optional override for the OpenAI API base URL. If you customize it, please make sure you have the same format. e.g. starts with `https://` without a trailing slash. The completions endpoint suffix is added internally, e.g. for reference: `${apiBaseUrl}/v1/completions`",
-          "order": 31
-        },
+      "chatgpt.gpt3.apiBaseUrl": {
+        "type": "string",
+        "default": "https://api.openai.com",
+        "markdownDescription": "Optional override for the OpenAI API base URL. If you customize it, please make sure you have the same format. e.g. starts with `https://` without a trailing slash. The completions endpoint suffix is added internally, e.g. for reference: `${apiBaseUrl}/v1/completions`",
+        "order": 31
+      },
+      "chatgpt.gpt3.azureBaseURL": {
+        "type": "string",
+        "markdownDescription": "Copy and paste your entire Azure URL with the api-version.",
+        "order": 32
+      },
         "chatgpt.gpt3.organization": {
           "type": "string",
           "markdownDescription": "OpenAI Organization ID. [Documentation](https://beta.openai.com/docs/api-reference/requesting-organization). \n\n**Please enable OpenAI API Key method to use this setting.**",
-          "order": 32
+          "order": 33
         },
         "chatgpt.gpt3.model": {
           "type": "string",
           "enum": [
-            "text-davinci-002-render",
             "gpt-4",
-            "text-davinci-002-render-paid",
-            "text-davinci-002-render-sha",
+            "gpt-4-0613",
+            "gpt-4-32k-0613",
             "gpt-3.5-turbo",
             "gpt-3.5-turbo-0301",
-            "text-davinci-003",
-            "text-curie-001",
-            "text-babbage-001",
-            "text-ada-001",
-            "code-davinci-002",
-            "code-cushman-001"
+            "gpt-3.5-turbo-0613",
+            "gpt-3.5-turbo-16k",
+            "gpt-3.5-turbo-16k-0613"
           ],
-          "default": "gpt-3.5-turbo",
+          "default": "gpt-3.5-turbo-16k",
           "markdownDescription": "OpenAI models to use for your prompts. [Documentation](https://beta.openai.com/docs/models/models). \n\n**If you face 400 Bad Request please make sure you are using the right model for your integration method.**",
-          "order": 33,
+          "order": 34,
           "enumItemLabels": [
-            "Browser autologin - default ChatGPT model",
-            "Browser autologin - ChatGPT Plus GPT-4",
-            "Browser autologin - ChatGPT Plus default model",
-            "Browser autologin - ChatGPT Plus legacy model",
-            "OpenAI API Key - gpt-3.5-turbo",
-            "OpenAI API Key - gpt-3.5-turbo-0301",
-            "OpenAI API Key - text-davinci-003",
-            "OpenAI API Key - text-curie-001",
-            "OpenAI API Key - text-babbage-001",
-            "OpenAI API Key - text-ada-001",
-            "OpenAI API Key - code-davinci-002",
-            "OpenAI API Key - code-cushman-001"
+            "GPT-4",
+            "GPT-4 (June 13)",
+            "GPT-4 32K (June 13)",
+            "GPT-3.5 Turbo",
+            "GPT-3.5 Turbo (March 1)",
+            "GPT-3.5 Turbo (June 13)",
+            "GPT-3.5 Turbo 16k",
+            "GPT-3.5 Turbo 16k (June 13)"
           ],
           "markdownEnumDescriptions": [
-            "Free Tier ChatGPT model that's used in chat.openai.com",
-            "ChatGPT Plus subscription GPT-4 model that's used in chat.openai.com. This requires a subscription on OpenAI side, please make sure you are eligible to use this model. \n\n**More capable than any GPT-3.5 model, able to do more complex tasks, and optimized for chat. Available to ChatGPT Plus users**",
-            "ChatGPT Plus subscription default model that's used in chat.openai.com. This requires a subscription on OpenAI side, please make sure you are eligible to use this model. \n\n**Optimized for speed, currently available to Plus users**",
-            "ChatGPT Plus subscription legacy model that's used in chat.openai.com. This requires a subscription on OpenAI side, please make sure you are eligible to use this model. \n\n**The previous ChatGPT Plus model**",
-            "Most capable GPT-3.5 model and optimized for chat at 1/10th the cost of `text-davinci-003`. Will be updated with our latest model iteration.",
-            "Snapshot of `gpt-3.5-turbo` from March 1st 2023. Unlike gpt-3.5-turbo, this model will not receive updates, and will only be supported for a three month period ending on June 1st 2023."
+            "Latest GPT-4 model. More capable than any GPT-3.5 model, able to do more complex tasks.",
+            "Snapshot of `gpt-4` from June 13th.",
+            "32K version of `gpt-4` from June 13th.",
+            "Most capable GPT-3.5 model and optimized for chat at 1/10th the cost of `text-davinci-003`",
+            "Snapshot of `gpt-3.5-turbo` from March 1st.",
+            "Snapshot of `gpt-3.5-turbo` from June 13th.",
+            "16K version of `gpt-3.5-turbo`.",
+            "16K version of `gpt-3.5-turbo` from June 13th."
           ]
+    
         },
         "chatgpt.gpt3.maxTokens": {
           "type": "number",
-          "default": 1024,
+          "default": 4000,
           "markdownDescription": "The maximum number of tokens to generate in the completion. \n\nThe token count of your prompt plus max_tokens cannot exceed the model's context length. Most models have a context length of 2048 tokens (except for the newest models, which support 4096). [Documentation](https://beta.openai.com/docs/api-reference/completions/create#completions/create-max_tokens) \n\n**Please enable OpenAI API Key method to use this setting.**",
-          "order": 34
+          "order": 35
         },
         "chatgpt.gpt3.temperature": {
           "type": "number",
-          "default": 1,
+          "default": 0.2,
           "markdownDescription": "What sampling temperature to use. Higher values means the model will take more risks. Try 0.9 for more creative applications, and 0 (argmax sampling) for ones with a well-defined answer.\n\nIt is recommended altering this or top_p but not both. [Documentation](https://beta.openai.com/docs/api-reference/completions/create#completions/create-temperature) \n\n**Please enable OpenAI API Key method to use this setting.**",
-          "order": 35
+          "order": 36
         },
         "chatgpt.gpt3.top_p": {
           "type": "number",
-          "default": 1,
+          "default": 0,
           "markdownDescription": "An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered. \n\nIt is recommended altering this or temperature but not both. [Documentation](https://beta.openai.com/docs/api-reference/completions/create#completions/create-top_p) \n\n**Please enable OpenAI API Key method to use this setting.**",
-          "order": 36
+          "order": 37
         },
         "chatgpt.response.showNotification": {
           "type": "boolean",
           "default": false,
           "description": "Choose whether you'd like to receive a notification when ChatGPT bot responds to your query.",
-          "order": 37
+          "order": 38
         },
         "chatgpt.response.autoScroll": {
           "type": "boolean",
           "default": true,
           "description": "Whenever there is a new question or response added to the conversation window, extension will automatically scroll to the bottom. You can change that behavior by disabling this setting.",
-          "order": 38
+          "order": 39
         },
         "chatgpt.telemetry.disable": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "Specify if you want to disable the telemetry. This extension also respects your default vs-code telemetry setting `telemetry.telemetryLevel`. We check both settings for telemetry. **Important**: No user data is tracked, we only use telemetry to see what is used, and what isn't. This allows us to make accurate decisions on what to add or enhance to the extension.",
-          "order": 39
+          "order": 40
+        },
+        "chatgpt.systemPrompt": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "The system prompt is a pre-defined text that will be automatically included at the beginning of each API call.",
+          "order": 41
+        },
+        "chatgpt.systemAppendPrompt": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "The system append prompt is a pre-defined text that will be automatically included at the end of each API call, after your code.",
+          "order": 42
         }
       }
     }

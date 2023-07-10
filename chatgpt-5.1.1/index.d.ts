@@ -4,6 +4,7 @@ type Role = 'user' | 'assistant' | 'system';
 type FetchFn = typeof fetch;
 type ChatGPTAPIOptions = {
     apiKey: string;
+    azureBaseURL?: string;
     /** @defaultValue `'https://api.openai.com'` **/
     apiBaseUrl?: string;
     /** @defaultValue `false` **/
