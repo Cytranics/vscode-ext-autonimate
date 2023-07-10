@@ -54,7 +54,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		context.globalState.update("chatgpt-clearance-token", null);
 		context.globalState.update("chatgpt-user-agent", null);
 		context.globalState.update("chatgpt-gpt3-apiKey", null);
-		
+
 		provider?.clearSession();
 	});
 
@@ -111,7 +111,9 @@ export async function activate(context: vscode.ExtensionContext) {
 			e.affectsConfiguration("chatgpt.gpt3.organization") ||
 			e.affectsConfiguration("chatgpt.gpt3.maxTokens") ||
 			e.affectsConfiguration("chatgpt.gpt3.temperature") ||
-			e.affectsConfiguration("chatgpt.gpt3.top_p")
+			e.affectsConfiguration("chatgpt.gpt3.top_p") ||
+			e.affectsConfiguration("chatgpt.systemPrompt") ||
+			e.affectsConfiguration("chatgpt.systemAppendPrompt")
 		) {
 			provider.prepareConversation(true);
 		}
@@ -119,9 +121,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		if (e.affectsConfiguration('chatgpt.promptPrefix') || e.affectsConfiguration('chatgpt.gpt3.generateCode-enabled') || e.affectsConfiguration('chatgpt.gpt3.model') || e.affectsConfiguration('chatgpt.method')) {
 			setContext();
 		}
-	
-		
-	
+
+
+
 	});
 
 	const adhocCommand = vscode.commands.registerCommand("vscode-chatgpt.adhoc", async () => {

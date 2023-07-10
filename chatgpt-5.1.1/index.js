@@ -97,7 +97,7 @@ var ChatGPTAPI = class {
   constructor(opts) {
     const {
       apiKey,
-      apiBaseUrl = "",
+      apiBaseUrl = "https://api.openai.com",
       azureBaseURL,
       organization,
       debug = false,
@@ -105,8 +105,8 @@ var ChatGPTAPI = class {
       provider,
       completionParams,
       systemMessage,
-      systemPrompt = "",
-      systemPromptAppend = "",
+      systemPrompt,
+      systemAppendPrompt,
       maxModelTokens = 4e3,
       maxResponseTokens = 1e3,
       getMessageById,
@@ -114,6 +114,8 @@ var ChatGPTAPI = class {
       fetch: fetch2 = fetch
     } = opts;
     console.log('azureBaseURL:', azureBaseURL);
+    console.log('systemPrompt:', systemPrompt);
+    console.log('systemAppendPrompt:', systemAppendPrompt);
     this._apiKey = apiKey;
     this._apiBaseUrl = azureBaseURL ? azureBaseURL : apiBaseUrl; // Prioritize azureBaseURL if provided
     this._isAzure = !!azureBaseURL; // Add this line
@@ -127,10 +129,11 @@ var ChatGPTAPI = class {
       presence_penalty: 1,
       ...completionParams
     };
-    this._systemMessage = systemMessage;
+    this._systemMessage = systemPrompt;
+    console.log('this._systemMessage:', this._systemMessage);
     if (this._systemMessage === void 0) {
       const currentDate = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-      this._systemMessage = `${systemPrompt}. Knowledge Cutoff: Sept 2021, Current date: ${currentDate}.`;
+      this._systemMessage = `${systemPrompt}. Current date: ${currentDate}. `;
     }
     this._maxModelTokens = maxModelTokens;
     this._maxResponseTokens = maxResponseTokens;
@@ -168,7 +171,7 @@ var ChatGPTAPI = class {
    * @param opts.messageId - Optional ID of the message to send (defaults to a random UUID)
    * @param opts.systemMessage - Optional override for the chat "system message" which acts as instructions to the model (defaults to the ChatGPT system message)
    * @param systemPrompt - Optional pre-defined text that will be automatically included at the beginning of each API call.
-   * @param systemPromptAppend - Optional pre-defined text that will be automatically included at the end of each API call, after your code.
+   * @param systemAppendPrompt - Optional pre-defined text that will be automatically included at the end of each API call, after your code.
    * @param opts.timeoutMs - Optional timeout in milliseconds (defaults to no timeout)
    * @param opts.onProgress - Optional callback which will be invoked every time the partial response is updated
    * @param opts.abortSignal - Optional callback used to abort the underlying `fetch` call using an [AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)
@@ -239,7 +242,7 @@ var ChatGPTAPI = class {
           stream
         };
         // Debug log: Body
-    
+        console.log(`Request Body: ${JSON.stringify(body)}`);
         if (stream) {
           fetchSSE(
             url,
@@ -250,15 +253,15 @@ var ChatGPTAPI = class {
               signal: abortSignal,
               onMessage: (data) => {
                 var _a2;
-            
+
                 if (data === "[DONE]") {
-                  
+
                   result.text = "done";
                   return resolve(result);
                 }
                 try {
                   const response = JSON.parse(data);
-                  
+
                   if (response.choices[0].finish_reason == "stop") {
                     result.text = "done";
                     return resolve(result);
@@ -369,7 +372,7 @@ var ChatGPTAPI = class {
     let nextMessages = text ? messages.concat([
       {
         role: "user",
-        content: text + opts.systemPromptAppend, // Added systemPromptAppend here
+        content: text, // Added systemAppendPrompt here
         name: opts.name
       }
     ]) : messages;

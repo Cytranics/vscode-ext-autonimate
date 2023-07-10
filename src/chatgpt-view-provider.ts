@@ -134,12 +134,12 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 					});
 					break;
 				case 'openSettings':
-					vscode.commands.executeCommand('workbench.action.openSettings', "@ext:YOUR_PUBLISHER_NAME.vscode-chatgpt chatgpt.");
+					vscode.commands.executeCommand('workbench.action.openSettings', "@ext:autonimate.vscode-chatgpt chatgpt.");
 
 					this.logEvent("settings-opened");
 					break;
 				case 'openSettingsPrompt':
-					vscode.commands.executeCommand('workbench.action.openSettings', "@ext:YOUR_PUBLISHER_NAME.vscode-chatgpt promptPrefix");
+					vscode.commands.executeCommand('workbench.action.openSettings', "@ext:autonimate.vscode-chatgpt promptPrefix");
 
 					this.logEvent("settings-prompt-opened");
 					break;
@@ -246,7 +246,8 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		const configuration = vscode.workspace.getConfiguration("chatgpt");
 		const apiBaseUrl: string | undefined = vscode.workspace.getConfiguration("chatgpt").get("gpt3.apiBaseUrl");
 		const azureBaseUrl: string | undefined = vscode.workspace.getConfiguration("chatgpt").get("gpt3.azureBaseURL");
-
+		const systemPrompt: string | undefined = vscode.workspace.getConfiguration("chatgpt").get("systemPrompt");
+		const systemAppendPrompt: string | undefined = vscode.workspace.getConfiguration("chatgpt").get("systemAppendPrompt");
 		// Prioritize azureBaseUrl if not blank, otherwise use apiBaseUrl
 		const selectedBaseUrl = azureBaseUrl && azureBaseUrl.trim() !== '' ? azureBaseUrl : apiBaseUrl;
 
@@ -258,6 +259,8 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 				const temperature = configuration.get("gpt3.temperature") as number;
 				const top_p = configuration.get("gpt3.top_p") as number;
 				const apiBaseUrl = configuration.get("gpt3.apiBaseUrl") as string;
+				const systemPrompt = vscode.workspace.getConfiguration("chatgpt").get("systemPrompt") as string;
+				const systemAppendPrompt = vscode.workspace.getConfiguration("chatgpt").get("systemAppendPrompt") as string;
 
 				if (!apiKey) {
 					vscode.window.showErrorMessage("Please add your API Key to use OpenAI official APIs. Storing the API Key in Settings is discouraged due to security reasons, though you can still opt-in to use it to persist it in settings. Instead you can also temporarily set the API Key one-time: You will need to re-enter after restarting the vs-code.", "Store in session (Recommended)", "Open settings").then(async choice => {
@@ -287,10 +290,13 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 				}
 
 				if (this.isGpt35Model) {
+					
 					this.apiGpt35 = new ChatGPTAPI35({
 						apiKey,
-						fetch: fetch,
+						fetch: fetch,						
 						apiBaseUrl: apiBaseUrl,
+						systemPrompt: systemPrompt,
+						systemAppendPrompt: systemAppendPrompt,
 						azureBaseURL: azureBaseUrl,
 						organization,
 						completionParams: {
@@ -307,8 +313,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 					this.apiGpt3 = new ChatGPTAPI3({
 						apiKey,
 						fetch: fetch,
-						apiBaseUrl: apiBaseUrl,
-					
+						apiBaseUrl: apiBaseUrl,					
 						organization,
 						completionParams: {
 							model: this.model,
@@ -330,13 +335,14 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 	}
 
 	private get systemContext() {
-		return `You are ChatGPT helping the User with pair programming.`;
+		this.systemPrompt;
+		return this.systemPrompt;
 	}
 
 	private processQuestion(question: string, code?: string, language?: string) {
 		if (code != null) {
 			// Add prompt prefix to the code if there was a code block selected
-			question = `${question}${language ? ` (The following code is in ${language} programming language)` : ''}: ${code}`;
+			question = `${question}${language ? ` (The following code is in ${language} programming language)` : ''}: ${code} Response Format:` + this.systemAppendPrompt;
 		}
 		return question + "\r\n";
 	}

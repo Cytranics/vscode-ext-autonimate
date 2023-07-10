@@ -11,6 +11,8 @@ type ChatGPTAPIOptions = {
     debug?: boolean;
     completionParams?: Partial<Omit<openai.CreateChatCompletionRequest, 'messages' | 'n' | 'stream'>>;
     systemMessage?: string;
+    systemPrompt?: string;
+    systemAppendPrompt?: string;
     /** @defaultValue `4096` **/
     maxModelTokens?: number;
     /** @defaultValue `1000` **/
@@ -403,6 +405,8 @@ declare class ChatGPTAPI {
     protected _upsertMessage: UpsertMessageFunction;
     protected _messageStore: Keyv<ChatMessage>;
     protected _organization: string;
+    protected _systemPrompt: string;
+    protected _systemAppendPrompt: string;
     /**
      * Creates a new client wrapper around OpenAI's chat completion API, mimicing the official ChatGPT webapp's functionality as closely as possible.
      *
@@ -416,7 +420,9 @@ declare class ChatGPTAPI {
      * @param getMessageById - Optional function to retrieve a message by its ID. If not provided, the default implementation will be used (using an in-memory `messageStore`).
      * @param upsertMessage - Optional function to insert or update a message. If not provided, the default implementation will be used (using an in-memory `messageStore`).
      * @param organization - Optional organization string for openai calls
-     * @param fetch - Optional override for the `fetch` implementation to use. Defaults to the global `fetch` function.
+     * @param fetch
+     * @param systemPrompt
+     * @param systemAppendPrompt - Optional override for the `fetch` implementation to use. Defaults to the global `fetch` function.
      */
     constructor(opts: ChatGPTAPIOptions);
     /**
