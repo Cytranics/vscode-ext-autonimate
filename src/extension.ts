@@ -1,6 +1,6 @@
 /**
  * @author Ali Gençay
- * https://github.com/gencay/vscode-chatgpt
+ * https://github.com/gencay/vscode-autonimate
  *
  * @license
  * Copyright (c) 2022 - Present, Ali Gençay
@@ -12,17 +12,16 @@
  */
 
 import * as vscode from "vscode";
-import ChatGptViewProvider from './chatgpt-view-provider';
+import ChatGptViewProvider from './autonimate-view';
 
-const menuCommands = ["addTests", "findProblems", "optimize", "explain", "addComments", "completeCode", "generateCode", "customPrompt1", "customPrompt2", "adhoc"];
+const menuCommands = ["refactorCode", "findProblems", "optimize", "explain", "addComments", "completeCode", "generateCode", "customPrompt1", "customPrompt2", "adhoc"];
 
 export async function activate(context: vscode.ExtensionContext) {
-	let adhocCommandPrefix: string = context.globalState.get("chatgpt-adhoc-prompt") || '';
+	let adhocCommandPrefix: string = context.globalState.get("autonimate-adhoc-prompt") || '';
 
 	const provider = new ChatGptViewProvider(context);
-
 	const view = vscode.window.registerWebviewViewProvider(
-		"vscode-chatgpt.view",
+		"autonimate.view",
 		provider,
 		{
 			webviewOptions: {
@@ -31,7 +30,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	);
 
-	const freeText = vscode.commands.registerCommand("vscode-chatgpt.freeText", async () => {
+
+	const freeText = vscode.commands.registerCommand("autonimate.freeText", async () => {
 		const value = await vscode.window.showInputBox({
 			prompt: "Ask anything...",
 		});
@@ -41,81 +41,67 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	});
 
-	const resetThread = vscode.commands.registerCommand("vscode-chatgpt.clearConversation", async () => {
+	const resetThread = vscode.commands.registerCommand("autonimate.clearConversation", async () => {
 		provider?.sendMessage({ type: 'clearConversation' }, true);
 	});
 
-	const exportConversation = vscode.commands.registerCommand("vscode-chatgpt.exportConversation", async () => {
+	const exportConversation = vscode.commands.registerCommand("autonimate.exportConversation", async () => {
 		provider?.sendMessage({ type: 'exportConversation' }, true);
 	});
 
-	const clearSession = vscode.commands.registerCommand("vscode-chatgpt.clearSession", () => {
-		context.globalState.update("chatgpt-session-token", null);
-		context.globalState.update("chatgpt-clearance-token", null);
-		context.globalState.update("chatgpt-user-agent", null);
-		context.globalState.update("chatgpt-gpt3-apiKey", null);
+	const clearSession = vscode.commands.registerCommand("autonimate.clearSession", () => {
+		context.globalState.update("autonimate-gpt3-apiKey", null);
+
 		provider?.clearSession();
 	});
 
 	const configChanged = vscode.workspace.onDidChangeConfiguration(e => {
-		if (e.affectsConfiguration('chatgpt.response.showNotification')) {
-			provider.subscribeToResponse = vscode.workspace.getConfiguration("chatgpt").get("response.showNotification") || false;
+		if (e.affectsConfiguration('autonimate.response.showNotification')) {
+			provider.subscribeToResponse = vscode.workspace.getConfiguration("autonimate").get("response.showNotification") || false;
 		}
 
-		if (e.affectsConfiguration('chatgpt.response.autoScroll')) {
-			provider.autoScroll = !!vscode.workspace.getConfiguration("chatgpt").get("response.autoScroll");
+		if (e.affectsConfiguration('autonimate.response.autoScroll')) {
+			provider.autoScroll = !!vscode.workspace.getConfiguration("autonimate").get("response.autoScroll");
 		}
 
-		if (e.affectsConfiguration('chatgpt.useAutoLogin')) {
-			provider.useAutoLogin = vscode.workspace.getConfiguration("chatgpt").get("useAutoLogin") || false;
 
-			context.globalState.update("chatgpt-session-token", null);
-			context.globalState.update("chatgpt-clearance-token", null);
-			context.globalState.update("chatgpt-user-agent", null);
+		if (e.affectsConfiguration('autonimate.systemPrompt')) {
+			provider.systemPrompt = vscode.workspace.getConfiguration("autonimate").get("systemPrompt") || '';
 		}
 
-		if (e.affectsConfiguration('chatgpt.chromiumPath')) {
-			provider.setChromeExecutablePath();
+		if (e.affectsConfiguration('autonimate.systemAppendPrompt')) {
+			provider.systemAppendPrompt = vscode.workspace.getConfiguration("autonimate").get("systemAppendPrompt") || '';
 		}
 
-		if (e.affectsConfiguration('chatgpt.profilePath')) {
-			provider.setProfilePath();
+
+
+		if (e.affectsConfiguration('autonimate.model')) {
+			provider.model = vscode.workspace.getConfiguration("autonimate").get("model");
 		}
 
-		if (e.affectsConfiguration('chatgpt.proxyServer')) {
-			provider.setProxyServer();
-		}
-
-		if (e.affectsConfiguration('chatgpt.method')) {
-			provider.setMethod();
-		}
-
-		if (e.affectsConfiguration('chatgpt.authenticationType')) {
-			provider.setAuthType();
-		}
-
-		if (e.affectsConfiguration('chatgpt.gpt3.model')) {
-			provider.model = vscode.workspace.getConfiguration("chatgpt").get("gpt3.model");
-		}
-
-		if (e.affectsConfiguration('chatgpt.gpt3.apiBaseUrl')
-			|| e.affectsConfiguration('chatgpt.gpt3.model')
-			|| e.affectsConfiguration('chatgpt.gpt3.organization')
-			|| e.affectsConfiguration('chatgpt.gpt3.maxTokens')
-			|| e.affectsConfiguration('chatgpt.gpt3.temperature')
-			|| e.affectsConfiguration('chatgpt.gpt3.top_p')) {
+		if (
+			e.affectsConfiguration("autonimate.apiBaseUrl") ||
+			e.affectsConfiguration("autonimate.azureBaseURL") ||
+			e.affectsConfiguration("autonimate.model") ||
+			e.affectsConfiguration("autonimate.azuredeployment") ||
+			e.affectsConfiguration("autonimate.maxTokens") ||
+			e.affectsConfiguration("autonimate.temperature") ||
+			e.affectsConfiguration("autonimate.top_p") ||
+			e.affectsConfiguration("autonimate.systemPrompt") ||
+			e.affectsConfiguration("autonimate.systemAppendPrompt")
+		) {
 			provider.prepareConversation(true);
 		}
 
-		if (e.affectsConfiguration('chatgpt.promptPrefix') || e.affectsConfiguration('chatgpt.gpt3.generateCode-enabled') || e.affectsConfiguration('chatgpt.gpt3.model') || e.affectsConfiguration('chatgpt.method')) {
+		if (e.affectsConfiguration('autonimate.promptPrefix') || e.affectsConfiguration('autonimate.generateCode-enabled') || e.affectsConfiguration('autonimate.model') || e.affectsConfiguration('autonimate.method')) {
 			setContext();
 		}
-	
-		
-	
+
+
+
 	});
 
-	const adhocCommand = vscode.commands.registerCommand("vscode-chatgpt.adhoc", async () => {
+	const adhocCommand = vscode.commands.registerCommand("autonimate.adhoc", async () => {
 		const editor = vscode.window.activeTextEditor;
 
 		if (!editor) {
@@ -140,7 +126,7 @@ export async function activate(context: vscode.ExtensionContext) {
 					}
 
 					adhocCommandPrefix = value.trim() || '';
-					context.globalState.update("chatgpt-adhoc-prompt", adhocCommandPrefix);
+					context.globalState.update("autonimate-adhoc-prompt", adhocCommandPrefix);
 				});
 
 			if (!dismissed && adhocCommandPrefix?.length > 0) {
@@ -149,7 +135,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	});
 
-	const generateCodeCommand = vscode.commands.registerCommand(`vscode-chatgpt.generateCode`, () => {
+	const generateCodeCommand = vscode.commands.registerCommand(`autonimate.generateCode`, () => {
 		const editor = vscode.window.activeTextEditor;
 
 		if (!editor) {
@@ -158,13 +144,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		const selection = editor.document.getText(editor.selection);
 		if (selection) {
+
 			provider?.sendApiRequest(selection, { command: "generateCode", language: editor.document.languageId });
 		}
 	});
 
 	// Skip AdHoc - as it was registered earlier
-	const registeredCommands = menuCommands.filter(command => command !== "adhoc" && command !== "generateCode").map((command) => vscode.commands.registerCommand(`vscode-chatgpt.${command}`, () => {
-		const prompt = vscode.workspace.getConfiguration("chatgpt").get<string>(`promptPrefix.${command}`);
+	const registeredCommands = menuCommands.filter(command => command !== "adhoc" && command !== "generateCode").map((command) => vscode.commands.registerCommand(`autonimate.${command}`, () => {
+		const prompt = vscode.workspace.getConfiguration("autonimate").get<string>(`promptPrefix.${command}`);
 		const editor = vscode.window.activeTextEditor;
 
 		if (!editor) {
@@ -173,6 +160,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		const selection = editor.document.getText(editor.selection);
 		if (selection && prompt) {
+			console.log({ command, code: selection, language: editor.document.languageId });
 			provider?.sendApiRequest(prompt, { command, code: selection, language: editor.document.languageId });
 		}
 	}));
@@ -182,13 +170,11 @@ export async function activate(context: vscode.ExtensionContext) {
 	const setContext = () => {
 		menuCommands.forEach(command => {
 			if (command === "generateCode") {
-				let generateCodeEnabled = !!vscode.workspace.getConfiguration("chatgpt").get<boolean>("gpt3.generateCode-enabled");
-				const modelName = vscode.workspace.getConfiguration("chatgpt").get("gpt3.model") as string;
-				const method = vscode.workspace.getConfiguration("chatgpt").get("method") as string;
-				generateCodeEnabled = generateCodeEnabled && method === "GPT3 OpenAI API Key" && modelName.startsWith("code-");
-				vscode.commands.executeCommand('setContext', "generateCode-enabled", generateCodeEnabled);
+
+				const modelName = vscode.workspace.getConfiguration("autonimate").get("model") as string;
+				const method = vscode.workspace.getConfiguration("autonimate").get("method") as string;
 			} else {
-				const enabled = !!vscode.workspace.getConfiguration("chatgpt.promptPrefix").get<boolean>(`${command}-enabled`);
+				const enabled = !!vscode.workspace.getConfiguration("autonimate.promptPrefix").get<boolean>(`${command}-enabled`);
 				vscode.commands.executeCommand('setContext', `${command}-enabled`, enabled);
 			}
 		});
