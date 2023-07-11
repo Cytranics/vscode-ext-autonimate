@@ -45,7 +45,7 @@
     "autonimate.promptPrefix.adhoc-enabled.description": "在上下文菜单中启用用于选定代码的 adhoc 命令的提示前缀",
     "autonimate.gpt3.apiKey.markdownDescription": "OpenAI API 密钥。[从 OpenAI 获取您的 API 密钥](https://beta.openai.com/account/api-keys)。\n\n **仅适用于 OpenAI API Key 方式使用此设置。**",
     "autonimate.gpt3.apiBaseUrl.markdownDescription": "[可选] OpenAI API 访问路径。如果您自定义它，请确保具有相同的格式。以 `https://` 开头，没有尾随斜杠。完整性端点后缀在内部添加，例如供参考：`${apiBaseUrl}/v1/completions`",
-    "autonimate.gpt3.organization.markdownDescription": "[可选] OpenAI 组织 ID。[文档](https://beta.openai.com/docs/api-reference/requesting-organization)。\n\n**仅适用于 OpenAI API Key 方式使用此设置。**",
+    ".markdownDescription": "[可选] OpenAI 组织 ID。[文档](https://beta.openai.com/docs/api-reference/requesting-organization)。\n\n**仅适用于 OpenAI API Key 方式使用此设置。**",
     "autonimate.gpt3.model.markdownDescription": "用于 Prompt 的 OpenAI 语言模型。[文档](https://beta.openai.com/docs/models/models)。\n\n**如果出现 400 Bad Request，请检查您的登录方式是否允许使用此语言模型。**",
     "autonimate.gpt3.model.enumItemLabels5": "OpenAI API Key - gpt-3.5-turbo",
     "autonimate.gpt3.model.enumItemLabels6": "OpenAI API Key - gpt-3.5-turbo-0301",

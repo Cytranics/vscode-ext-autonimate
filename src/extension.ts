@@ -12,7 +12,7 @@
  */
 
 import * as vscode from "vscode";
-import ChatGptViewProvider from './chatgpt-view-provider';
+import ChatGptViewProvider from './autonimate-view';
 
 const menuCommands = ["refactorCode", "findProblems", "optimize", "explain", "addComments", "completeCode", "generateCode", "customPrompt1", "customPrompt2", "adhoc"];
 
@@ -20,7 +20,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	let adhocCommandPrefix: string = context.globalState.get("autonimate-adhoc-prompt") || '';
 
 	const provider = new ChatGptViewProvider(context);
-	provider.setMessageId = "3452346362362346";
 	const view = vscode.window.registerWebviewViewProvider(
 		"autonimate.view",
 		provider,
@@ -51,9 +50,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	const clearSession = vscode.commands.registerCommand("autonimate.clearSession", () => {
-		context.globalState.update("autonimate-session-token", null);
-		context.globalState.update("autonimate-clearance-token", null);
-		context.globalState.update("autonimate-user-agent", null);
 		context.globalState.update("autonimate-gpt3-apiKey", null);
 
 		provider?.clearSession();
@@ -68,29 +64,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			provider.autoScroll = !!vscode.workspace.getConfiguration("autonimate").get("response.autoScroll");
 		}
 
-		if (e.affectsConfiguration('autonimate.useAutoLogin')) {
-			provider.useAutoLogin = vscode.workspace.getConfiguration("autonimate").get("useAutoLogin") || false;
 
-			context.globalState.update("autonimate-session-token", null);
-			context.globalState.update("autonimate-clearance-token", null);
-			context.globalState.update("autonimate-user-agent", null);
-		}
-
-		if (e.affectsConfiguration('autonimate.chromiumPath')) {
-			provider.setChromeExecutablePath();
-		}
-
-		if (e.affectsConfiguration('autonimate.profilePath')) {
-			provider.setProfilePath();
-		}
-
-		if (e.affectsConfiguration('autonimate.proxyServer')) {
-			provider.setProxyServer();
-		}
-
-		if (e.affectsConfiguration('autonimate.method')) {
-			provider.setMethod();
-		}
 		if (e.affectsConfiguration('autonimate.systemPrompt')) {
 			provider.systemPrompt = vscode.workspace.getConfiguration("autonimate").get("systemPrompt") || '';
 		}
@@ -101,25 +75,25 @@ export async function activate(context: vscode.ExtensionContext) {
 
 
 
-		if (e.affectsConfiguration('autonimate.gpt3.model')) {
-			provider.model = vscode.workspace.getConfiguration("autonimate").get("gpt3.model");
+		if (e.affectsConfiguration('autonimate.model')) {
+			provider.model = vscode.workspace.getConfiguration("autonimate").get("model");
 		}
 
 		if (
-			e.affectsConfiguration("autonimate.gpt3.apiBaseUrl") ||
-			e.affectsConfiguration("autonimate.gpt3.azureBaseURL") ||
-			e.affectsConfiguration("autonimate.gpt3.model") ||
-			e.affectsConfiguration("autonimate.gpt3.organization") ||
-			e.affectsConfiguration("autonimate.gpt3.maxTokens") ||
-			e.affectsConfiguration("autonimate.gpt3.temperature") ||
-			e.affectsConfiguration("autonimate.gpt3.top_p") ||
+			e.affectsConfiguration("autonimate.apiBaseUrl") ||
+			e.affectsConfiguration("autonimate.azureBaseURL") ||
+			e.affectsConfiguration("autonimate.model") ||
+			e.affectsConfiguration("autonimate.azuredeployment") ||
+			e.affectsConfiguration("autonimate.maxTokens") ||
+			e.affectsConfiguration("autonimate.temperature") ||
+			e.affectsConfiguration("autonimate.top_p") ||
 			e.affectsConfiguration("autonimate.systemPrompt") ||
 			e.affectsConfiguration("autonimate.systemAppendPrompt")
 		) {
 			provider.prepareConversation(true);
 		}
 
-		if (e.affectsConfiguration('autonimate.promptPrefix') || e.affectsConfiguration('autonimate.gpt3.generateCode-enabled') || e.affectsConfiguration('autonimate.gpt3.model') || e.affectsConfiguration('autonimate.method')) {
+		if (e.affectsConfiguration('autonimate.promptPrefix') || e.affectsConfiguration('autonimate.generateCode-enabled') || e.affectsConfiguration('autonimate.model') || e.affectsConfiguration('autonimate.method')) {
 			setContext();
 		}
 
@@ -170,6 +144,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		const selection = editor.document.getText(editor.selection);
 		if (selection) {
+
 			provider?.sendApiRequest(selection, { command: "generateCode", language: editor.document.languageId });
 		}
 	});
@@ -185,6 +160,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		const selection = editor.document.getText(editor.selection);
 		if (selection && prompt) {
+			console.log({ command, code: selection, language: editor.document.languageId });
 			provider?.sendApiRequest(prompt, { command, code: selection, language: editor.document.languageId });
 		}
 	}));
@@ -194,11 +170,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	const setContext = () => {
 		menuCommands.forEach(command => {
 			if (command === "generateCode") {
-				let generateCodeEnabled = !!vscode.workspace.getConfiguration("autonimate").get<boolean>("gpt3.generateCode-enabled");
-				const modelName = vscode.workspace.getConfiguration("autonimate").get("gpt3.model") as string;
+
+				const modelName = vscode.workspace.getConfiguration("autonimate").get("model") as string;
 				const method = vscode.workspace.getConfiguration("autonimate").get("method") as string;
-				generateCodeEnabled = generateCodeEnabled && method === "GPT3 OpenAI API Key" && modelName.startsWith("code-");
-				vscode.commands.executeCommand('setContext', "generateCode-enabled", generateCodeEnabled);
 			} else {
 				const enabled = !!vscode.workspace.getConfiguration("autonimate.promptPrefix").get<boolean>(`${command}-enabled`);
 				vscode.commands.executeCommand('setContext', `${command}-enabled`, enabled);

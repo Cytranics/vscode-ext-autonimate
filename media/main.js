@@ -30,7 +30,14 @@
         xhtml: false
     });
 
-    const aiSvg = `<svg version="1.0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-license="isc-gnc" stroke-width="1.5" stroke="currentColor" class="w-5 mr-2"><g transform="translate(0.000000,1000.000000) scale(0.100000,-0.100000)" fill="#000000" stroke="none"><path d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z"></path></g></svg>`;
+    const aiSvg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" stroke-width="1.2" version="1.1">
+<g id="surface1">
+<path style=" stroke:none;fill-rule:nonzero;fill:rgb(123,123,123);fill-opacity:1;" d="M 8.15625 6.992188 C 6 10.726562 4.070312 14.0625 3.882812 14.398438 L 3.523438 15.019531 L 5.738281 14.960938 L 7.96875 14.90625 L 9.976562 11.476562 C 11.0625 9.582031 12.039062 8.0625 12.132812 8.082031 C 12.207031 8.117188 13.894531 10.929688 15.863281 14.324219 L 19.425781 20.53125 L 21.617188 20.585938 C 22.820312 20.605469 23.8125 20.605469 23.8125 20.570312 C 23.8125 20.53125 21.84375 17.082031 19.445312 12.917969 C 17.042969 8.757812 14.417969 4.199219 13.613281 2.8125 C 12.804688 1.425781 12.132812 0.261719 12.113281 0.242188 C 12.09375 0.226562 10.3125 3.261719 8.15625 6.992188 Z M 8.15625 6.992188 "/>
+<path style=" stroke:none;fill-rule:nonzero;fill:rgb(123,123,123);fill-opacity:1;" d="M 10.480469 14.664062 C 9.636719 16.144531 8.53125 18.039062 8.042969 18.898438 C 7.539062 19.742188 7.125 20.492188 7.125 20.53125 C 7.125 20.585938 9.375 20.625 12.113281 20.625 C 14.851562 20.625 17.0625 20.550781 17.023438 20.476562 C 16.894531 20.117188 12.148438 12 12.09375 12 C 12.054688 12 11.34375 13.199219 10.480469 14.664062 Z M 10.480469 14.664062 "/>
+<path style=" stroke:none;fill-rule:nonzero;fill:rgb(123,123,123);fill-opacity:1;" d="M 1.667969 18.226562 C 1.238281 18.976562 0.769531 19.78125 0.636719 20.007812 C 0.488281 20.230469 0.375 20.476562 0.375 20.53125 C 0.375 20.585938 1.351562 20.605469 2.550781 20.585938 L 4.726562 20.53125 L 5.738281 18.789062 C 6.300781 17.8125 6.75 17.007812 6.75 16.949219 C 6.75 16.914062 5.773438 16.875 4.59375 16.875 L 2.457031 16.875 Z M 1.667969 18.226562 "/>
+</g>
+</svg>
+`;
     
 
     const userSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-license="isc-gnc" stroke-width="1.5" stroke="currentColor" class="w-5 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
@@ -110,16 +117,17 @@
 
     window.addEventListener("message", (event) => {
         const message = event.data;
-        console.log(message);
+      
         const list = document.getElementById("qa-list");
         if (message.value === "done")  {
             return;
         }
+  
 
 
         switch (message.type) {
             case "showInProgress":
-                if (message.showStopButton) {
+                if (message.inProgress === true) {
                     document.getElementById("stop-button").classList.remove("hidden");
                 } else {
                     document.getElementById("stop-button").classList.add("hidden");
@@ -157,7 +165,7 @@
                         <div class="overflow-y-auto">${escapeHtml(message.value)}</div>
                     </div>`;
 
-                if (message.autoScroll) {
+                if (event.data.autoScroll) {
                     list.lastChild?.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
                 }
                 break;
@@ -165,19 +173,10 @@
                 let existingMessage = document.getElementById(message.id);
                 let updatedValue = "";
                 let rawValue = "";
-                const unEscapeHtml = (unsafe) => {
-                    return unsafe.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
-                };
-            
-                if (!message.responseInMarkdown) {
-                    updatedValue = unEscapeHtml(message.value);
-                } else {
-                    updatedValue = message.value.split("```").length % 2 === 1 ? message.value : message.value + "\n\n```\n\n";
-                    updatedValue = message.value.replace(/`([^`]{1})`/g, '<code>$1</code>');
-
-
-                    
-                }
+                
+                updatedValue = message.value.split("```").length % 2 === 1 ? message.value : message.value + "\n\n```\n\n";
+                updatedValue = message.value.replace(/`([^`]{1})`/g, '<code>$1</code>');                 
+                
                 
                 const wrappedCodeBlocks = [];
                 let inCodeBlock = false;
@@ -222,19 +221,21 @@
                 });
                 
                 htmlDoc.querySelectorAll("pre > code").forEach(createCodeBlockButtons);
-                list.lastChild?.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+              
                 const updatedMarkedResponse = htmlDoc.documentElement.innerHTML;
                
                 
 
                 if (existingMessage) {
+                    
           
                     existingMessage.innerHTML = updatedMarkedResponse;
+                    
                    
                 } else {
                     list.innerHTML +=
                         `<div data-license="isc-gnc" class="p-4 self-end mt-4 pb-8 answer-element-ext">
-                            <h2 class="mb-5 flex">${aiSvg}Autonimate</h2>
+                            <h2 class="mb-5 flex">${aiSvg} Autonimate</h2>
                             <div class="result-streaming" id="${message.id}">${updatedMarkedResponse}</div>
                         </div>`;
                 }
@@ -242,7 +243,7 @@
            
 
                 if (message.autoScroll) {
-                    list.lastChild?.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+                    list.lastChild?.scrollIntoView({ behavior: "smooth", block: "end", inline: "end" });
                 }
                 
                 break;
