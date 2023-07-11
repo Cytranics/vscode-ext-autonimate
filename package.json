@@ -1,13 +1,13 @@
 {
-  "name": "vscode-chatgpt",
-  "publisher": "Autonimate Ltd",
-  "displayName": "vscode-chatgpt",
+  "name": "autonimate",
+  "publisher": "autonimate",
+  "displayName": "Autonimate: DevGPT",
   "icon": "images/ai-logo.png",
-  "description": "vscode-chatgpt",
-  "version": "3.9.7-0",
+  "description": "A development plug autonimate AI Copilot Autonomous OpenAI.",
+  "version": "1.0.1",
   "aiKey": "",
   "repository": {
-    "url": "https://github.com/YOUR_PUBLISHER_NAME/vscode-chatgpt"
+    "url": "https://github.com/Cytranics/vscode-autonimate"
   },
   "engines": {
     "vscode": "^1.73.0"
@@ -32,7 +32,10 @@
     "testing",
     "find bugs",
     "copilot",
-    "ai"
+    "ai",
+    "autonomous",
+    "gpt engineer",
+    "auto development"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -42,114 +45,114 @@
     "menus": {
       "editor/context": [
         {
-          "command": "vscode-chatgpt.generateCode",
-          "group": "chatGpt@1",
+          "command": "autonimate.generateCode",
+          "group": "autonimate@1",
           "when": "editorHasSelection && generateCode-enabled"
         },
         {
-          "command": "vscode-chatgpt.addTests",
-          "group": "chatGpt@2",
-          "when": "editorHasSelection && addTests-enabled"
+          "command": "autonimate.refactorCode",
+          "group": "autonimate@2",
+          "when": "editorHasSelection && refactorCode-enabled"
         },
         {
-          "command": "vscode-chatgpt.findProblems",
-          "group": "chatGpt@3",
+          "command": "autonimate.findProblems",
+          "group": "autonimate@3",
           "when": "editorHasSelection && findProblems-enabled"
         },
         {
-          "command": "vscode-chatgpt.optimize",
-          "group": "chatGpt@4",
+          "command": "autonimate.optimize",
+          "group": "autonimate@4",
           "when": "editorHasSelection && optimize-enabled"
         },
         {
-          "command": "vscode-chatgpt.explain",
-          "group": "chatGpt@5",
+          "command": "autonimate.explain",
+          "group": "autonimate@5",
           "when": "editorHasSelection && explain-enabled"
         },
         {
-          "command": "vscode-chatgpt.addComments",
-          "group": "chatGpt@6",
+          "command": "autonimate.addComments",
+          "group": "autonimate@6",
           "when": "editorHasSelection && addComments-enabled"
         },
         {
-          "command": "vscode-chatgpt.completeCode",
-          "group": "chatGpt@7",
+          "command": "autonimate.completeCode",
+          "group": "autonimate@7",
           "when": "editorHasSelection && completeCode-enabled"
         },
         {
-          "command": "vscode-chatgpt.adhoc",
-          "group": "chatGpt@8",
+          "command": "autonimate.adhoc",
+          "group": "autonimate@8",
           "when": "editorHasSelection && adhoc-enabled"
         },
         {
-          "command": "vscode-chatgpt.customPrompt1",
-          "group": "chatGpt@9",
+          "command": "autonimate.customPrompt1",
+          "group": "autonimate@9",
           "when": "editorHasSelection && customPrompt1-enabled"
         },
         {
-          "command": "vscode-chatgpt.customPrompt2",
-          "group": "chatGpt@10",
+          "command": "autonimate.customPrompt2",
+          "group": "autonimate@10",
           "when": "editorHasSelection && customPrompt2-enabled"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "vscode-chatgpt.generateCode",
+        "command": "autonimate.generateCode",
         "key": "ctrl+shift+a",
         "mac": "cmd+shift+a",
         "when": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.addTests",
+        "command": "autonimate.refactorCode",
         "key": "ctrl+k ctrl+shift+1",
         "mac": "cmd+k cmd+shift+1",
         "when": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.findProblems",
+        "command": "autonimate.findProblems",
         "key": "ctrl+k ctrl+shift+2",
         "mac": "cmd+k cmd+shift+2",
         "when": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.optimize",
+        "command": "autonimate.optimize",
         "key": "ctrl+k ctrl+shift+3",
         "mac": "cmd+k cmd+shift+3",
         "when": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.explain",
+        "command": "autonimate.explain",
         "key": "ctrl+k ctrl+shift+4",
         "mac": "cmd+k cmd+shift+4",
         "when": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.addComments",
+        "command": "autonimate.addComments",
         "key": "ctrl+k ctrl+shift+5",
         "mac": "cmd+k cmd+shift+5",
         "when": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.completeCode",
+        "command": "autonimate.completeCode",
         "key": "ctrl+k ctrl+shift+6",
         "mac": "cmd+k cmd+shift+6",
         "when": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.adhoc",
+        "command": "autonimate.adhoc",
         "key": "ctrl+k ctrl+shift+7",
         "mac": "cmd+k cmd+shift+7",
         "when": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.customPrompt1",
+        "command": "autonimate.customPrompt1",
         "key": "ctrl+k ctrl+shift+8",
         "mac": "cmd+k cmd+shift+8",
         "when": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.customPrompt2",
+        "command": "autonimate.customPrompt2",
         "key": "ctrl+k ctrl+shift+9",
         "mac": "cmd+k cmd+shift+9",
         "when": "editorHasSelection"
@@ -157,77 +160,77 @@
     ],
     "commands": [
       {
-        "command": "vscode-chatgpt.freeText",
+        "command": "autonimate.freeText",
         "title": "Autonimate: Ask Anything!"
       },
       {
-        "command": "vscode-chatgpt.clearSession",
-        "title": "ChatGPT: Reset session"
+        "command": "autonimate.clearSession",
+        "title": "Autonimate: Reset session"
       },
       {
-        "command": "vscode-chatgpt.generateCode",
-        "title": "ChatGPT-Codex: Generate code",
+        "command": "autonimate.generateCode",
+        "title": "Autonimate-Codex: Generate code",
         "enablement": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.addTests",
-        "title": "ChatGPT: Add tests",
+        "command": "autonimate.refactorCode",
+        "title": "Autonimate: Refactor Code",
         "enablement": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.findProblems",
-        "title": "ChatGPT: Find bugs",
+        "command": "autonimate.findProblems",
+        "title": "Autonimate: Debug Code",
         "enablement": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.optimize",
-        "title": "ChatGPT: Optimize",
+        "command": "autonimate.optimize",
+        "title": "Autonimate: Optimize Code",
         "enablement": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.explain",
-        "title": "ChatGPT: Explain",
+        "command": "autonimate.explain",
+        "title": "Autonimate: Explain Code",
         "enablement": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.addComments",
-        "title": "ChatGPT: Add comments",
+        "command": "autonimate.addComments",
+        "title": "Autonimate: Add Comments",
         "enablement": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.completeCode",
-        "title": "ChatGPT: Complete code",
+        "command": "autonimate.completeCode",
+        "title": "Autonimate: Complete Code",
         "enablement": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.adhoc",
-        "title": "ChatGPT: Ad-hoc prompt",
+        "command": "autonimate.adhoc",
+        "title": "Autonimate: Ad-hoc prompt",
         "enablement": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.customPrompt1",
-        "title": "ChatGPT: Custom prompt 1",
+        "command": "autonimate.customPrompt1",
+        "title": "Autonimate: Custom prompt 1",
         "enablement": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.customPrompt2",
-        "title": "ChatGPT: Custom prompt 2",
+        "command": "autonimate.customPrompt2",
+        "title": "Autonimate: Custom prompt 2",
         "enablement": "editorHasSelection"
       },
       {
-        "command": "vscode-chatgpt.clearConversation",
-        "title": "ChatGPT: Clear conversation"
+        "command": "autonimate.clearConversation",
+        "title": "Autonimate: Clear conversation"
       },
       {
-        "command": "vscode-chatgpt.exportConversation",
-        "title": "ChatGPT: Export conversation"
+        "command": "autonimate.exportConversation",
+        "title": "Autonimate: Export conversation"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "vscode-chatgpt-view-container",
-          "title": "ChatGPT",
+          "title": "Autonimate",
           "icon": "images/ai-logo-in.png"
         }
       ]
@@ -236,7 +239,7 @@
       "vscode-chatgpt-view-container": [
         {
           "type": "webview",
-          "id": "vscode-chatgpt.view",
+          "id": "autonimate.view",
           "name": "Conversation window"
         }
       ]
@@ -244,7 +247,7 @@
     "configuration": {
       "title": "Autonimate",
       "properties": {
-        "chatgpt.method": {
+        "autonimate.method": {
           "type": "string",
           "enum": [
             "API Key"
@@ -256,145 +259,133 @@
             "API Key"
           ],
           "markdownEnumDescriptions": [
-            "Various text & code completion models are supported including ChatGPT Turbo models. \n\n- GPT3.5 -> i.e. `'chatgpt.gpt3.model': 'gpt-3.5-turbo'`\n\n- GPT3 -> i.e. `'chatgpt.gpt3.model': 'text-davinci-003'`\n\n- Codex -> i.e.`'chatgpt.gpt3.model': 'code-davinci-002'`"
+            "Various text & code completion models are supported including ChatGPT Turbo models. \n\n- GPT3.5 -> i.e. `'autonimate.gpt3.model': 'gpt-3.5-turbo'`\n\n- GPT3 -> i.e. `'autonimate.gpt3.model': 'text-davinci-003'`\n\n- Codex -> i.e.`'autonimate.gpt3.model': 'code-davinci-002'`"
           ]
         },
-        "chatgpt.proxyServer": {
+        "autonimate.promptPrefix.refactorCode": {
           "type": "string",
-          "default": null,
-          "markdownDescription": "[Optional] The proxy server you'd like to use. Supports HTTP proxies only, don't provide the protocol in the setting. Format example: \n\n `authenticated`:`myUsername:myPassword@my.proxy.com:3001` \n\n `anonymous`: `204.137.172.37:999` \n\n **Only available for `Browser Auto-login` method**",
-          "order": 5
-        },
-        "chatgpt.gpt3.generateCode-enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable the code generation context menu item for the selected comment/code for Codex. Only available with code-* models",
-          "order": 7
-        },
-        "chatgpt.promptPrefix.addTests": {
-          "type": "string",
-          "default": "Implement tests for the following code",
-          "description": "The prompt prefix used for adding tests for the selected code",
+          "default": "Act as a software engineer specializing in clean code principles and modern programming practices. You are given the task of refactoring the following code provided below. Please consider the following aspects: Improve code readability: Strive for clarity and simplicity, ensuring anyone can understand the purpose and logic of the code. Optimize the code: Identify and eliminate any inefficiencies, favoring speed and resource utilization. Reduce code duplication: Use appropriate design patterns and methods to avoid repeating code blocks. Incorporate error handling: Implement robust error and exception handling, ensuring the code can recover from unexpected situations. Proper formatting: Adhere to the best practice guidelines of the language for code indentation, naming conventions, and other syntactical matters. Add logging: Implement comprehensive logging to trace the code execution path, especially during error situations. Use language's best practices: Ensure you apply the best techniques, idioms, and practices of the language, based on the latest training data. Please note that the code should be as up-to-date and relevant as possible, reflecting modern programming practices rather than outdated methods. Here is the code to refactor: ",
+          "description": "Enable the prompt prefix used for refactoring the selected code in the context menu",
           "order": 8
         },
-        "chatgpt.promptPrefix.addTests-enabled": {
+        "autonimate.promptPrefix.refactorCode-enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable the prompt prefix used for adding tests for the selected code in the context menu",
+          "description": "Enable the prompt prefix used for refactoring the selected code in the context menu",
           "order": 9
         },
-        "chatgpt.promptPrefix.findProblems": {
+        "autonimate.promptPrefix.findProblems": {
           "type": "string",
-          "default": "Find problems with the following code",
+          "default": "Act as a software developer or a code reviewer. Given the code snippet provided, use your understanding of software design principles, programming best practices, and common coding errors to evaluate it critically. Look out for issues related to syntax, semantics, error handling, performance, and security. Consider both glaring issues and subtler ones, such as anti-patterns, poorly-named variables, inappropriate comments, or sub-optimal data structures and algorithms. Additionally, try to assess whether the code adheres to common coding standards for readability, simplicity, and maintainability. If the language in which the code is written has established style guides, like PEP8 for Python, consider these too. Finally, provide specific recommendations for how to fix any problems you identify, and explain why these fixes are necessary. Do remember, however, that this exercise is purely theoretical as you can't actually execute the code. So your evaluation will be based on your training and theoretical understanding of coding principles up until 2021. Here's the code:",
           "description": "The prompt prefix used for finding problems for the selected code",
           "order": 10
         },
-        "chatgpt.promptPrefix.findProblems-enabled": {
+        "autonimate.promptPrefix.findProblems-enabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable the prompt prefix used for finding problems for the selected code in the context menu",
           "order": 11
         },
-        "chatgpt.promptPrefix.optimize": {
+        "autonimate.promptPrefix.optimize": {
           "type": "string",
-          "default": "Optimize the following code",
+          "default": "Act as a seasoned software engineer who is an expert in Python. Your task is to optimize the following piece of code, aiming to increase its runtime efficiency without sacrificing its correctness or readability. Comment on each modification you make, explaining why the changes improve the performance. Here is the code",
           "description": "The prompt prefix used for optimizing the selected code",
           "order": 12
         },
-        "chatgpt.promptPrefix.optimize-enabled": {
+        "autonimate.promptPrefix.optimize-enabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable the prompt prefix used for optimizing the selected code in the context menu",
           "order": 13
         },
-        "chatgpt.promptPrefix.explain": {
+        "autonimate.promptPrefix.explain": {
           "type": "string",
-          "default": "Explain the following code",
+          "default": "Please act as a professional software engineer with expertise in various programming languages. Break down the code line by line, explaining what each part does, the logic behind it, and the overall function of the code. If there are any important concepts or techniques being used, please explain them as well. If you notice any potential issues or areas for improvement, point them out and provide suggestions for how they could be addressed. Try to explain in a way that someone with basic programming knowledge could understand.",
           "description": "The prompt prefix used for explaining the selected code",
           "order": 14
         },
-        "chatgpt.promptPrefix.explain-enabled": {
+        "autonimate.promptPrefix.explain-enabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable the prompt prefix used for explaining the selected code in the context menu",
           "order": 15
         },
-        "chatgpt.promptPrefix.addComments": {
+        "autonimate.promptPrefix.addComments": {
           "type": "string",
-          "default": "Add comments for the following code",
+          "default": "I'd like you to act as an experienced software engineer who specializes in code review and documentation. I have a piece of code for which I need comprehensive comments. I'm looking for explanatory comments that detail what each part of the code does and why it's necessary. If there are any potential improvements or issues you see, please note them as well. Try to use simple and accessible language to make the explanations clear for beginners as well as experienced developers. Please include an explanation of the overall function of the code, a line-by-line breakdown where necessary, and any potential improvements. Your expertise in making this code understandable and maintainable will be greatly appreciated.",
           "description": "The prompt prefix used for adding comments for the selected code",
           "order": 16
         },
-        "chatgpt.promptPrefix.addComments-enabled": {
+        "autonimate.promptPrefix.addComments-enabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable the prompt prefix used for adding comments for the selected code in the context menu",
           "order": 17
         },
-        "chatgpt.promptPrefix.completeCode": {
+        "autonimate.promptPrefix.completeCode": {
           "type": "string",
-          "default": "Complete the following code",
+          "default": "Act as a senior software engineer.  I have an unfinished piece of code that's missing some key functionalities. Take into account best practices for code optimization, maintainability, and readability. Also, consider potential edge cases and handle any potential errors gracefully. Please complete the code adhering to these requirements and provide an explanation of your design decisions and logic.",
           "description": "The prompt prefix used for completing the selected code",
           "order": 18
         },
-        "chatgpt.promptPrefix.completeCode-enabled": {
+        "autonimate.promptPrefix.completeCode-enabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable the prompt prefix used for completing the selected code in the context menu",
           "order": 19
         },
-        "chatgpt.promptPrefix.customPrompt1": {
+        "autonimate.promptPrefix.customPrompt1": {
           "type": "string",
           "default": "",
           "description": "Your custom prompt. It's disabled by default, please set to a custom prompt and enable it if you prefer using customized prompt",
           "order": 20
         },
-        "chatgpt.promptPrefix.customPrompt1-enabled": {
+        "autonimate.promptPrefix.customPrompt1-enabled": {
           "type": "boolean",
-          "default": false,
-          "markdownDescription": "Enable the prompt prefix used for your custom prompt. The default value is empty, if you enable this item make sure to set this `chatgpt.promptPrefix.customPrompt1`",
+          "default": true,
+          "markdownDescription": "Enable the prompt prefix used for your custom prompt. The default value is empty, if you enable this item make sure to set this `autonimate.promptPrefix.customPrompt1`",
           "order": 21
         },
-        "chatgpt.promptPrefix.customPrompt2": {
+        "autonimate.promptPrefix.customPrompt2": {
           "type": "string",
-          "default": "",
+          "default": "Act as a senior software engineer.  I have an unfinished piece of code that's missing some key functionalities. Take into account best practices for code optimization, maintainability, and readability. Also, consider potential edge cases and handle any potential errors gracefully. Please complete the code adhering to these requirements and provide an explanation of your design decisions and logic. Please note that for this exercise, you should assume that you have a strong understanding of the language the code is written in and that you're familiar with best practices for writing clean, efficient code in that language. Additionally, please point out any potential trade-offs that might come with your refactoring, such as readability vs performance. Let's ensure the resulting code is something that a team of diverse software engineers could easily understand and maintain.",
           "description": "Your custom prompt. It's disabled by default, please set to a custom prompt and enable it if you prefer using customized prompt",
           "order": 22
         },
-        "chatgpt.promptPrefix.customPrompt2-enabled": {
+        "autonimate.promptPrefix.customPrompt2-enabled": {
           "type": "boolean",
-          "default": false,
-          "markdownDescription": "Enable the prompt prefix used for your custom prompt. The default value is empty, if you enable this item make sure to set this `chatgpt.promptPrefix.customPrompt2`",
+          "default": true,
+          "markdownDescription": "Enable the prompt prefix used for your custom prompt. The default value is empty, if you enable this item make sure to set this `autonimate.promptPrefix.customPrompt2`",
           "order": 23
         },
-        "chatgpt.promptPrefix.adhoc-enabled": {
+        "autonimate.promptPrefix.adhoc-enabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable the prompt prefix used for adhoc command for the selected code in the context menu",
           "order": 24
         },
-        "chatgpt.gpt3.apiKey": {
+        "autonimate.gpt3.apiKey": {
           "type": "string",
           "markdownDescription": "OpenAI API key. [Get your API Key from OpenAI](https://beta.openai.com/account/api-keys). \n\n**Please enable OpenAI API Key method to use this setting.**",
-          "order": 30
+          "order": 2
         },
-        "chatgpt.gpt3.apiBaseUrl": {
+        "autonimate.gpt3.apiBaseUrl": {
           "type": "string",
           "default": "https://api.openai.com",
           "markdownDescription": "Optional override for the OpenAI API base URL. If you customize it, please make sure you have the same format. e.g. starts with `https://` without a trailing slash. The completions endpoint suffix is added internally, e.g. for reference: `${apiBaseUrl}/v1/completions`",
-          "order": 31
+          "order": 3
         },
-        "chatgpt.gpt3.azureBaseURL": {
+        "autonimate.gpt3.azureBaseURL": {
           "type": "string",
           "markdownDescription": "Copy and paste your entire Azure URL with the api-version.",
-          "order": 32
+          "order": 5
         },
-        "chatgpt.gpt3.organization": {
+        "autonimate.gpt3.organization": {
           "type": "string",
           "markdownDescription": "OpenAI Organization ID. [Documentation](https://beta.openai.com/docs/api-reference/requesting-organization). \n\n**Please enable OpenAI API Key method to use this setting.**",
-          "order": 33
+          "order": 4
         },
-        "chatgpt.gpt3.model": {
+        "autonimate.gpt3.model": {
           "type": "string",
           "enum": [
             "gpt-4",
@@ -408,7 +399,7 @@
           ],
           "default": "gpt-3.5-turbo-16k",
           "markdownDescription": "OpenAI models to use for your prompts. [Documentation](https://beta.openai.com/docs/models/models). \n\n**If you face 400 Bad Request please make sure you are using the right model for your integration method.**",
-          "order": 34,
+          "order": 6,
           "enumItemLabels": [
             "GPT-4",
             "GPT-4 (June 13)",
@@ -420,61 +411,61 @@
             "GPT-3.5 Turbo 16k (June 13)"
           ],
           "markdownEnumDescriptions": [
-            "Latest GPT-4 model. More capable than any GPT-3.5 model, able to do more complex tasks.",
-            "Snapshot of `gpt-4` from June 13th.",
+            "8k GPT-4: Latest GPT-4 model. More capable than any GPT-3.5 model, able to do more complex tasks.",
+            "8k Snapshot of `gpt-4` from June 13th.",
             "32K version of `gpt-4` from June 13th.",
-            "Most capable GPT-3.5 model and optimized for chat at 1/10th the cost of `text-davinci-003`",
-            "Snapshot of `gpt-3.5-turbo` from March 1st.",
-            "Snapshot of `gpt-3.5-turbo` from June 13th.",
+            "4k GPT-3.5 model and optimized for chat at 1/10th the cost of `text-davinci-003`",
+            "4k Snapshot of `gpt-3.5-turbo` from March 1st.",
+            "4k Snapshot of `gpt-3.5-turbo` from June 13th.",
             "16K version of `gpt-3.5-turbo`.",
             "16K version of `gpt-3.5-turbo` from June 13th."
           ]
         },
-        "chatgpt.gpt3.maxTokens": {
+        "autonimate.gpt3.maxTokens": {
           "type": "number",
           "default": 4000,
           "markdownDescription": "The maximum number of tokens to generate in the completion. \n\nThe token count of your prompt plus max_tokens cannot exceed the model's context length. Most models have a context length of 2048 tokens (except for the newest models, which support 4096). [Documentation](https://beta.openai.com/docs/api-reference/completions/create#completions/create-max_tokens) \n\n**Please enable OpenAI API Key method to use this setting.**",
-          "order": 35
+          "order": 7
         },
-        "chatgpt.gpt3.temperature": {
+        "autonimate.gpt3.temperature": {
           "type": "number",
           "default": 0.2,
           "markdownDescription": "What sampling temperature to use. Higher values means the model will take more risks. Try 0.9 for more creative applications, and 0 (argmax sampling) for ones with a well-defined answer.\n\nIt is recommended altering this or top_p but not both. [Documentation](https://beta.openai.com/docs/api-reference/completions/create#completions/create-temperature) \n\n**Please enable OpenAI API Key method to use this setting.**",
           "order": 36
         },
-        "chatgpt.gpt3.top_p": {
+        "autonimate.gpt3.top_p": {
           "type": "number",
           "default": 0,
           "markdownDescription": "An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered. \n\nIt is recommended altering this or temperature but not both. [Documentation](https://beta.openai.com/docs/api-reference/completions/create#completions/create-top_p) \n\n**Please enable OpenAI API Key method to use this setting.**",
           "order": 37
         },
-        "chatgpt.response.showNotification": {
+        "autonimate.response.showNotification": {
           "type": "boolean",
           "default": false,
           "description": "Choose whether you'd like to receive a notification when ChatGPT bot responds to your query.",
           "order": 38
         },
-        "chatgpt.response.autoScroll": {
+        "autonimate.response.autoScroll": {
           "type": "boolean",
           "default": true,
           "description": "Whenever there is a new question or response added to the conversation window, extension will automatically scroll to the bottom. You can change that behavior by disabling this setting.",
           "order": 39
         },
-        "chatgpt.telemetry.disable": {
+        "autonimate.telemetry.disable": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "Specify if you want to disable the telemetry. This extension also respects your default vs-code telemetry setting `telemetry.telemetryLevel`. We check both settings for telemetry. **Important**: No user data is tracked, we only use telemetry to see what is used, and what isn't. This allows us to make accurate decisions on what to add or enhance to the extension.",
           "order": 40
         },
-        "chatgpt.systemPrompt": {
+        "autonimate.systemPrompt": {
           "type": "string",
-          "default": "",
+          "default": "Assume the role of a seasoned software architect who's guiding a software developer through a complex project. You're assisting this developer who is using Visual Studio Code, with an open source code document that they just uploaded.  Firstly, provide a meticulously detailed pseudocode plan, addressing each step to follow when building the software, keeping in mind the developer's work environment. Consider aspects like the editors with open files, integrated unit test support, and an output pane displaying the output of running the code as well as an integrated terminal.  Next, provide the final code, enclosed in a single Markdown-formatted code block. Precede this code block with the programming language name. As you do this, remember to keep any other textual explanations to a bare minimum. Your responses should be concise, professional, and impersonal.  Despite the brief nature of your responses, ensure they're well-structured and make good use of Markdown formatting for clarity and easy understanding.  Remember that you have only one chance to respond in each turn of the conversation.  Finally, at the end of your response, provide a few short and relevant suggestions for the next possible user prompts. These should align with the ongoing software development conversation.",
           "markdownDescription": "The system prompt is a pre-defined text that will be automatically included at the beginning of each API call.",
           "order": 41
         },
-        "chatgpt.systemAppendPrompt": {
+        "autonimate.systemAppendPrompt": {
           "type": "string",
-          "default": "",
+          "default": "Response Format: You must include the entire updated version of the code provided, regardless of its length or complexity, to ensure you can use it right away. Don't omit any parts of the code for the sake of brevity. You should be able to copy and paste the revised code directly into your own development environment. Additionally, please provide clear, detailed explanations for each adjustment or improvement you make, so that you can understand and learn from your changes.",
           "markdownDescription": "The system append prompt is a pre-defined text that will be automatically included at the end of each API call, after your code.",
           "order": 42
         }
@@ -514,7 +505,7 @@
     "gpt3-tokenizer": "^1.1.5",
     "isomorphic-fetch": "^3.0.0",
     "keyv": "^4.5.2",
-    "openai": "^3.1.0",
+    "openai": "^3.3.0",
     "p-timeout": "^6.1.1",
     "puppeteer": "^19.4.0",
     "puppeteer-extra": "^3.3.4",

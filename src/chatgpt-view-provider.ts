@@ -18,12 +18,12 @@ import * as os from 'node:os';
 import * as vscode from 'vscode';
 import { ChatGPTAPI as ChatGPTAPI3 } from '../chatgpt-4.7.2/index';
 import { ChatGPTAPI as ChatGPTAPI35 } from '../chatgpt-5.1.1/index';
-import { EventEmitter, Event } from "vscode";
+import { Configuration, OpenAIApi } from "openai";
+
 
 
 type LoginMethod = "API Key";
 type AuthType = "";
-
 
 
 export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
@@ -60,11 +60,11 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 	 */
 	private leftOverMessage?: any;
 	constructor(private context: vscode.ExtensionContext) {
-		this.subscribeToResponse = vscode.workspace.getConfiguration("chatgpt").get("response.showNotification") || false;
-		this.autoScroll = !!vscode.workspace.getConfiguration("chatgpt").get("response.autoScroll");
-		this.model = vscode.workspace.getConfiguration("chatgpt").get("gpt3.model") as string;
-		this.systemPrompt = vscode.workspace.getConfiguration("chatgpt").get("systemPrompt") || '';
-		this.systemAppendPrompt = vscode.workspace.getConfiguration("chatgpt").get("systemAppendPrompt") || '';
+		this.subscribeToResponse = vscode.workspace.getConfiguration("autonimate").get("response.showNotification") || false;
+		this.autoScroll = !!vscode.workspace.getConfiguration("autonimate").get("response.autoScroll");
+		this.model = vscode.workspace.getConfiguration("autonimate").get("gpt3.model") as string;
+		this.systemPrompt = vscode.workspace.getConfiguration("autonimate").get("systemPrompt") || '';
+		this.systemAppendPrompt = vscode.workspace.getConfiguration("autonimate").get("systemAppendPrompt") || '';
 
 		this.setMethod();
 		this.setChromeExecutablePath();
@@ -73,7 +73,11 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		this.setAuthType();
 		;
 	}
-
+	// Setter for messageId
+	set setMessageId(id: string) {
+		this.messageId = id;
+	}
+	
 	public resolveWebviewView(
 		webviewView: vscode.WebviewView,
 		_context: vscode.WebviewViewResolveContext,
@@ -109,7 +113,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 						language: data.language
 					});
 					vscode.window.showTextDocument(document);
-
+					
 					this.logEvent(data.language === "markdown" ? "code-exported" : "code-opened");
 					break;
 				case 'clearConversation':
@@ -136,12 +140,12 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 					});
 					break;
 				case 'openSettings':
-					vscode.commands.executeCommand('workbench.action.openSettings', "@ext:chatgpt.vscode-chatgpt chatgpt.");
+					vscode.commands.executeCommand('workbench.action.openSettings', "@ext:autonimate.autonimate autonimate.");
 
 					this.logEvent("settings-opened");
 					break;
 				case 'openSettingsPrompt':
-					vscode.commands.executeCommand('workbench.action.openSettings', "@ext:chatgpt.vscode-chatgpt promptPrefix");
+					vscode.commands.executeCommand('workbench.action.openSettings', "@ext:autonimate.autonimate promptPrefix");
 
 					this.logEvent("settings-prompt-opened");
 					break;
@@ -149,39 +153,40 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 					/// ...
 					break;
 
+				
 				case 'showDiff':
 					const activeEditor = vscode.window.activeTextEditor;
 					if (activeEditor) {
-						const documentText = activeEditor.document.getText();
-						const diffValue = data.value;
-
-						// Use a diff library or implement your own diff logic here
-						// For example, using the 'diff' npm package:
-						const diff = require('diff');
-						const changes = diff.diffLines(documentText, diffValue);
-
-						// Format and display the diff result
-						let result = '';
-						changes.forEach((change: any) => {
-							if (change.added) {
-								result += '+ ' + change.value;
-							} else if (change.removed) {
-								result += '- ' + change.value;
-							} else {
-								result += '  ' + change.value;
-							}
+						const document1Uri = activeEditor.document.uri;
+				
+						// Create a new untitled document with the content of data.value
+						const document2 = await vscode.workspace.openTextDocument({ 
+							content: data.value,
+							language: activeEditor.document.languageId // Use the same language as the original document
 						});
-
-						// Open a new document with the diff result
-						const diffDocument = await vscode.workspace.openTextDocument({
-							content: result,
-							language: 'plaintext'
-						});
-						vscode.window.showTextDocument(diffDocument);
+				
+						// Get the URI for the new document
+						const document2Uri = document2.uri;
+				
+						// Open the diff editor with the original document and the new document
+						vscode.commands.executeCommand('vscode.diff',
+							document1Uri,
+							document2Uri,
+							'Autonimate - Left: Current, Right: Generated'
+						);
 					}
+				
+				
+				
+					
+					
+				
+						this.logEvent("code-diffed");
+						break;
+				
+				
+				
 
-					this.logEvent("code-diffed");
-					break;
 
 				case "stopGenerating":
 					this.stopGenerating();
@@ -197,7 +202,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 			this.leftOverMessage = null;
 		}
 	}
-
+	
 	private stopGenerating(): void {
 		this.abortController?.abort?.();
 		this.inProgress = false;
@@ -216,13 +221,13 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 	}
 
 	public setProxyServer(): void {
-		this.proxyServer = vscode.workspace.getConfiguration("chatgpt").get("proxyServer");
+		this.proxyServer = vscode.workspace.getConfiguration("autonimate").get("proxyServer");
 	}
 
-	
+
 
 	public setMethod(): void {
-		this.loginMethod = vscode.workspace.getConfiguration("chatgpt").get("method") as LoginMethod;
+		this.loginMethod = vscode.workspace.getConfiguration("autonimate").get("method") as LoginMethod;
 
 		this.useGpt3 = true;
 		this.useAutoLogin = false;
@@ -230,7 +235,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 	}
 
 	public setAuthType(): void {
-		this.authType = vscode.workspace.getConfiguration("chatgpt").get("authenticationType");
+		this.authType = vscode.workspace.getConfiguration("autonimate").get("authenticationType");
 		this.clearSession();
 	}
 
@@ -258,12 +263,12 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 				break;
 		}
 
-		this.chromiumPath = vscode.workspace.getConfiguration("chatgpt").get("chromiumPath") || path;
+		this.chromiumPath = vscode.workspace.getConfiguration("autonimate").get("chromiumPath") || path;
 		this.clearSession();
 	}
 
 	public setProfilePath(): void {
-		this.profilePath = vscode.workspace.getConfiguration("chatgpt").get("profilePath");
+		this.profilePath = vscode.workspace.getConfiguration("autonimate").get("profilePath");
 		this.clearSession();
 	}
 
@@ -282,29 +287,27 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		}
 
 		const state = this.context.globalState;
-		const configuration = vscode.workspace.getConfiguration("chatgpt");
-		const apiBaseUrl: string | undefined = vscode.workspace.getConfiguration("chatgpt").get("gpt3.apiBaseUrl");
-		const azureBaseUrl: string | undefined = vscode.workspace.getConfiguration("chatgpt").get("gpt3.azureBaseURL");
-		const systemPrompt: string | undefined = vscode.workspace.getConfiguration("chatgpt").get("systemPrompt");
-		const systemAppendPrompt: string | undefined = vscode.workspace.getConfiguration("chatgpt").get("systemAppendPrompt");
+		const configuration = vscode.workspace.getConfiguration("autonimate");
+		const apiBaseUrl: string | undefined = vscode.workspace.getConfiguration("autonimate").get("gpt3.apiBaseUrl");
+		const azureBaseUrl: string | undefined = vscode.workspace.getConfiguration("autonimate").get("gpt3.azureBaseURL");
 		// Prioritize azureBaseUrl if not blank, otherwise use apiBaseUrl
 		const selectedBaseUrl = azureBaseUrl && azureBaseUrl.trim() !== '' ? azureBaseUrl : apiBaseUrl;
 
 		if (this.useGpt3) {
 			if ((this.isGpt35Model && !this.apiGpt35) || (!this.isGpt35Model && !this.apiGpt3) || modelChanged) {
-				let apiKey = configuration.get("gpt3.apiKey") as string || state.get("chatgpt-gpt3-apiKey") as string;
+				let apiKey = configuration.get("gpt3.apiKey") as string || state.get("autonimate-gpt3-apiKey") as string;
 				const organization = configuration.get("gpt3.organization") as string;
 				const max_tokens = configuration.get("gpt3.maxTokens") as number;
 				const temperature = configuration.get("gpt3.temperature") as number;
 				const top_p = configuration.get("gpt3.top_p") as number;
 				const apiBaseUrl = configuration.get("gpt3.apiBaseUrl") as string;
-				const systemPrompt = vscode.workspace.getConfiguration("chatgpt").get("systemPrompt") as string;
-				const systemAppendPrompt = vscode.workspace.getConfiguration("chatgpt").get("systemAppendPrompt") as string;
+				const systemPrompt = vscode.workspace.getConfiguration("autonimate").get("systemPrompt") as string;
+				const systemAppendPrompt = vscode.workspace.getConfiguration("autonimate").get("systemAppendPrompt") as string;
 
 				if (!apiKey) {
 					vscode.window.showErrorMessage("Please add your API Key to use OpenAI official APIs. Storing the API Key in Settings is discouraged due to security reasons, though you can still opt-in to use it to persist it in settings. Instead you can also temporarily set the API Key one-time: You will need to re-enter after restarting the vs-code.", "Store in session (Recommended)", "Open settings").then(async choice => {
 						if (choice === "Open settings") {
-							vscode.commands.executeCommand('workbench.action.openSettings', "chatgpt.gpt3.apiKey");
+							vscode.commands.executeCommand('workbench.action.openSettings', "autonimate.gpt3.apiKey");
 							return false;
 						} else if (choice === "Store in session (Recommended)") {
 							await vscode.window
@@ -318,7 +321,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 								.then((value) => {
 									if (value) {
 										apiKey = value;
-										state.update("chatgpt-gpt3-apiKey", apiKey);
+										state.update("autonimate-gpt3-apiKey", apiKey);
 										this.sendMessage({ type: 'loginSuccessful', showConversations: this.useAutoLogin }, true);
 									}
 								});
@@ -329,10 +332,10 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 				}
 
 				if (this.isGpt35Model) {
-					
+
 					this.apiGpt35 = new ChatGPTAPI35({
 						apiKey,
-						fetch: fetch,						
+						fetch: fetch,
 						apiBaseUrl: apiBaseUrl,
 						systemPrompt: systemPrompt,
 						systemAppendPrompt: systemAppendPrompt,
@@ -345,26 +348,11 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 							top_p,
 						}
 					});
-					
-					
-					
-				} else {
-					this.apiGpt3 = new ChatGPTAPI3({
-						apiKey,
-						fetch: fetch,
-						apiBaseUrl: apiBaseUrl,					
-						organization,
-						completionParams: {
-							model: this.model,
-							max_tokens,
-							temperature,
-							top_p,
-						}
-					});
-					
-					
-					
+
 				}
+
+				
+					
 			}
 		}
 
@@ -381,7 +369,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 	private processQuestion(question: string, code?: string, language?: string) {
 		if (code != null) {
 			// Add prompt prefix to the code if there was a code block selected
-			question = `${question}${language ? ` (The following code is in ${language} programming language)` : ''}: ${code} Response Format:` + this.systemAppendPrompt;
+			question = `${question}${language ? ` (The following code is in ${language} programming language, utilize your latest training data on the language.)` : ''}: ${code} Response Format:` + this.systemAppendPrompt;
 		}
 		return question + ' Response Format: ' + this.systemAppendPrompt + '\r\n';
 	}
@@ -394,7 +382,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 
 		this.questionCounter++;
 
-		this.logEvent("api-request-sent", { "chatgpt.command": options.command, "chatgpt.hasCode": String(!!options.code), "chatgpt.hasPreviousAnswer": String(!!options.previousAnswer) });
+		this.logEvent("api-request-sent", { "autonimate.command": options.command, "autonimate.hasCode": String(!!options.code), "autonimate.hasPreviousAnswer": String(!!options.previousAnswer) });
 
 		if (!await this.prepareConversation()) {
 			return;
@@ -406,7 +394,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 
 		// If the ChatGPT view is not in focus/visible; focus on it to render Q&A
 		if (this.webView == null) {
-			vscode.commands.executeCommand('vscode-chatgpt.view.focus');
+			vscode.commands.executeCommand('autonimate.view.focus');
 		} else {
 			this.webView?.show?.(true);
 		}
@@ -454,7 +442,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 
 			if (hasContinuation) {
 				this.response = this.response + " \r\n ```\r\n";
-				vscode.window.showInformationMessage("It looks like ChatGPT didn't complete their answer for your coding question. You can ask it to continue and combine the answers.", "Continue and combine answers")
+				vscode.window.showInformationMessage("It looks like autonimate didn't complete their answer for your coding question. You can ask it to continue and combine the answers.", "Continue and combine answers")
 					.then(async (choice) => {
 						if (choice === "Continue and combine answers") {
 							this.sendApiRequest("Continue", { command: options.command, code: undefined, previousAnswer: this.response });
@@ -465,8 +453,8 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 			this.sendMessage({ type: 'addResponse', value: this.response, done: true, id: this.currentMessageId, autoScroll: this.autoScroll, responseInMarkdown });
 
 			if (this.subscribeToResponse) {
-				vscode.window.showInformationMessage("ChatGPT responded to your question.", "Open conversation").then(async () => {
-					await vscode.commands.executeCommand('vscode-chatgpt.view.focus');
+				vscode.window.showInformationMessage("autonimate responded to your question.", "Open conversation").then(async () => {
+					await vscode.commands.executeCommand('autonimate.view.focus');
 				});
 			}
 		} catch (error: any) {
@@ -480,7 +468,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 
 				vscode.window.showErrorMessage("An error occured. If this is due to max_token you could try `ChatGPT: Clear Conversation` command and retry sending your prompt.", "Clear conversation and retry").then(async choice => {
 					if (choice === "Clear conversation and retry") {
-						await vscode.commands.executeCommand("vscode-chatgpt.clearConversation");
+						await vscode.commands.executeCommand("autonimate.clearConversation");
 						await delay(250);
 						this.sendApiRequest(prompt, { command: options.command, code: options.code });
 					}
@@ -531,14 +519,14 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 
 	private logEvent(eventName: string, properties?: {}): void {
 		// You can initialize your telemetry reporter and consume it here - *replaced with console.debug to prevent unwanted telemetry logs
-		// this.reporter?.sendTelemetryEvent(eventName, { "chatgpt.loginMethod": this.loginMethod!, "chatgpt.authType": this.authType!, "chatgpt.model": this.model || "unknown", ...properties }, { "chatgpt.questionCounter": this.questionCounter });
-		console.debug(eventName, { "chatgpt.loginMethod": this.loginMethod!, "chatgpt.authType": this.authType!, "chatgpt.model": this.model || "unknown", ...properties }, { "chatgpt.questionCounter": this.questionCounter });
+		// this.reporter?.sendTelemetryEvent(eventName, { "autonimate.loginMethod": this.loginMethod!, "autonimate.authType": this.authType!, "autonimate.model": this.model || "unknown", ...properties }, { "autonimate.questionCounter": this.questionCounter });
+		console.debug(eventName, { "autonimate.loginMethod": this.loginMethod!, "autonimate.authType": this.authType!, "autonimate.model": this.model || "unknown", ...properties }, { "autonimate.questionCounter": this.questionCounter });
 	}
 
 	private logError(eventName: string): void {
 		// You can initialize your telemetry reporter and consume it here - *replaced with console.error to prevent unwanted telemetry logs
-		// this.reporter?.sendTelemetryErrorEvent(eventName, { "chatgpt.loginMethod": this.loginMethod!, "chatgpt.authType": this.authType!, "chatgpt.model": this.model || "unknown" }, { "chatgpt.questionCounter": this.questionCounter });
-		console.error(eventName, { "chatgpt.loginMethod": this.loginMethod!, "chatgpt.authType": this.authType!, "chatgpt.model": this.model || "unknown" }, { "chatgpt.questionCounter": this.questionCounter });
+		// this.reporter?.sendTelemetryErrorEvent(eventName, { "autonimate.loginMethod": this.loginMethod!, "autonimate.authType": this.authType!, "autonimate.model": this.model || "unknown" }, { "autonimate.questionCounter": this.questionCounter });
+		console.error(eventName, { "autonimate.loginMethod": this.loginMethod!, "autonimate.authType": this.authType!, "autonimate.model": this.model || "unknown" }, { "autonimate.questionCounter": this.questionCounter });
 	}
 
 	private getWebviewHtml(webview: vscode.Webview) {
@@ -550,7 +538,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		const vendorMarkedJs = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'vendor', 'marked.min.js'));
 		const vendorTailwindJs = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'vendor', 'tailwindcss.3.2.4.min.js'));
 		const vendorTurndownJs = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'vendor', 'turndown.js'));
-	
+
 
 		const nonce = this.getRandomId();
 
@@ -566,6 +554,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 				<script src="${vendorMarkedJs}"></script>
 				<script src="${vendorTailwindJs}"></script>
 				<script src="${vendorTurndownJs}"></script>
+		
 			</head>
 			<body class="overflow-hidden">
 				<div class="flex flex-col h-screen">
@@ -577,18 +566,16 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 								</svg>
 								<h2>Features</h2>
 								<ul class="flex flex-col gap-3.5 text-xs">
-									<li class="features-li w-full border border-zinc-700 p-3 rounded-md">Access to your ChatGPT conversation history</li>
-									<li class="features-li w-full border border-zinc-700 p-3 rounded-md">Improve your code, add tests & find bugs</li>
-									<li class="features-li w-full border border-zinc-700 p-3 rounded-md">Copy or create new files automatically</li>
+									<li class="features-li w-full border border-zinc-700 p-3 rounded-md">Advanced Prompting Support</li>
+									<li class="features-li w-full border border-zinc-700 p-3 rounded-md">Compatible with OpenAI and Azure</li>
+									<li class="features-li w-full border border-zinc-700 p-3 rounded-md">Copy, Create and Diff.</li>
 									<li class="features-li w-full border border-zinc-700 p-3 rounded-md">Syntax highlighting with auto language detection</li>
 								</ul>
 							</div>
 						</div>
 						<div class="flex flex-col gap-4 h-full items-center justify-end text-center">
-							<button id="login-button" class="mb-4 btn btn-primary flex gap-2 justify-center p-3 rounded-md">Log in</button>
-							<button id="list-conversations-link" class="hidden mb-4 btn btn-primary flex gap-2 justify-center p-3 rounded-md" title="You can access this feature via the kebab menu below. NOTE: Only available with Browser Auto-login method">
-								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" /></svg>&nbsp;Show conversations
-							</button>
+							
+				
 							<p class="max-w-sm text-center text-xs text-slate-500">
 								<a title="" id="settings-button" href="#">Update settings</a>&nbsp; | &nbsp;<a title="" id="settings-prompt-button" href="#">Update prompts</a>
 							</p>

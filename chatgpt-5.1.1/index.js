@@ -113,9 +113,6 @@ var ChatGPTAPI = class {
       upsertMessage,
       fetch: fetch2 = fetch
     } = opts;
-    console.log('azureBaseURL:', azureBaseURL);
-    console.log('systemPrompt:', systemPrompt);
-    console.log('systemAppendPrompt:', systemAppendPrompt);
     this._apiKey = apiKey;
     this._apiBaseUrl = azureBaseURL ? azureBaseURL : apiBaseUrl; // Prioritize azureBaseURL if provided
     this._isAzure = !!azureBaseURL; // Add this line
@@ -131,7 +128,6 @@ var ChatGPTAPI = class {
     };
     this._systemMessage = systemPrompt;
     this._systemAppendMessage = systemAppendPrompt;
-    console.log('this._systemMessage:', this._systemMessage);
     if (this._systemMessage === void 0) {
       const currentDate = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
       this._systemMessage = `${systemPrompt}. Current date: ${currentDate}. `;
@@ -205,23 +201,23 @@ var ChatGPTAPI = class {
     const { messages } = await this._buildMessages(text, opts);
     const result = {
       role: "assistant",
-      id: uuidv4(),
-      parentMessageId: messageId,
+      id: messageId,
+      parentMessageId: parentMessageId,
       text: ""
     };
     const responseP = new Promise(
       async (resolve, reject) => {
         var _a, _b;
-        console.log('Before:', this._isAzure, this._apiBaseUrl);
+
 
         const url = this._isAzure
           ? `${this._apiBaseUrl}`
           : `${this._apiBaseUrl}/v1/chat/completions`;
 
-        console.log('After:', url);
+
 
         // Debug log: URL
-        console.log(`Request URL: ${url}`);
+
         const headers = {
           "Content-Type": "application/json"
         };
@@ -235,7 +231,7 @@ var ChatGPTAPI = class {
           }
         }
         // Debug log: Headers
-        console.log('Request Headers:', headers);
+
         const body = {
           ...this._completionParams,
           ...completionParams,
@@ -273,7 +269,7 @@ var ChatGPTAPI = class {
                   if ((_a2 = response == null ? void 0 : response.choices) == null ? void 0 : _a2.length) {
                     const delta = response.choices[0].delta;
                     result.delta = delta.content;
-                    
+
                     if (delta == null ? void 0 : delta.content)
                       result.text += delta.content;
                     result.detail = response;
@@ -308,7 +304,7 @@ var ChatGPTAPI = class {
             }
             const response = await res.json();
             if (this._debug) {
-              console.log(response);
+
             }
             if (response === null ? void 0 : response.id) {
               result.id = response.id;
@@ -381,7 +377,8 @@ var ChatGPTAPI = class {
     ]) : messages;
     do {
       const prompt = nextMessages.reduce((prompt2, message) => {
-        switch (message.role) {
+        switch (message.role)
+         {
           case "system":
             return prompt2.concat([`Instructions:
 ${message.content}`]);
@@ -415,9 +412,7 @@ ${message.content}`]);
     } while (true);
     return { messages };
   }
-  // protected get _isCodexModel() {
-  //   return this._completionParams.model.startsWith('code-')
-  // }
+
   async _defaultGetMessageById(id) {
     const res = await this._messageStore.get(id);
     return res;

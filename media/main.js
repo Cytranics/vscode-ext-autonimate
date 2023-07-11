@@ -15,7 +15,7 @@
 
 (function () {
     const vscode = acquireVsCodeApi();
-
+    let language = "";
     marked.setOptions({
         renderer: new marked.Renderer(),
         highlight: function (code, _lang) {
@@ -24,13 +24,14 @@
         langPrefix: 'hljs language-',
         pedantic: false,
         gfm: true,
-        breaks: true,
+        breaks: false,
         sanitize: false,
         smartypants: false,
         xhtml: false
     });
 
-    const aiSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-license="isc-gnc" stroke-width="1.5" stroke="currentColor" class="w-5 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z"></path></svg>`;
+    const aiSvg = `<svg version="1.0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-license="isc-gnc" stroke-width="1.5" stroke="currentColor" class="w-5 mr-2"><g transform="translate(0.000000,1000.000000) scale(0.100000,-0.100000)" fill="#000000" stroke="none"><path d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z"></path></g></svg>`;
+    
 
     const userSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-license="isc-gnc" stroke-width="1.5" stroke="currentColor" class="w-5 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
 
@@ -57,11 +58,12 @@
     const diffSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M12 20V4m-7 9h14"></path></svg>`;
 
 
+
     function insertAfter(newNode, referenceNode) {
         referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
     }
 
-    // ... (previous code)
+
 
     function createCodeBlockButtons(preCode) {
         preCode.classList.add("input-background", "p-4", "pb-2", "block", "whitespace-pre", "overflow-x-scroll");
@@ -108,6 +110,7 @@
 
     window.addEventListener("message", (event) => {
         const message = event.data;
+        console.log(message);
         const list = document.getElementById("qa-list");
         if (message.value === "done")  {
             return;
@@ -161,25 +164,33 @@
             case "addResponse":
                 let existingMessage = document.getElementById(message.id);
                 let updatedValue = "";
+                let rawValue = "";
                 const unEscapeHtml = (unsafe) => {
                     return unsafe.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
                 };
-
+            
                 if (!message.responseInMarkdown) {
                     updatedValue = unEscapeHtml(message.value);
                 } else {
-                    updatedValue = message.value;
-                }
+                    updatedValue = message.value.split("```").length % 2 === 1 ? message.value : message.value + "\n\n```\n\n";
+                    updatedValue = message.value.replace(/`([^`]{1})`/g, '<code>$1</code>');
 
+
+                    
+                }
+                
                 const wrappedCodeBlocks = [];
                 let inCodeBlock = false;
-                const lines = updatedValue.split('\n');
+                 // variable to store the language
+                const lines = updatedValue.split("\n");
                 
                 lines.forEach((line, index) => {
-                    line = line.trim();
-                    if (line.startsWith("```")) {
+                    const match = /^```(.*)$/.exec(line);
+                    if (match) {
                         inCodeBlock = !inCodeBlock;
-                        if (!inCodeBlock && index !== lines.length - 1) {
+                        if (inCodeBlock) {
+                            language = match[1]; // save the language
+                        } else if (!inCodeBlock && index !== lines.length - 1) {
                             wrappedCodeBlocks.push("</p>\n\n<p>");
                         }
                     } else {
@@ -189,29 +200,37 @@
                         wrappedCodeBlocks.push(line);
                     }
                 });
+                
+            
+                
                 if (inCodeBlock) {
                     wrappedCodeBlocks.push("</p>");
                 }
-                updatedValue = "<p>" + wrappedCodeBlocks.join('\n') + "</p>";
                 
-                const markedResponse = marked.parse(updatedValue);
+                updatedValue = "<p>" + wrappedCodeBlocks.join('\n') + "</p>";
+                let markedResponse = marked.parse(updatedValue);
+                
+                
+                //const markedResponse = marked.parse(updatedValue);
                 const parser = new DOMParser();
                 const htmlDoc = parser.parseFromString(markedResponse, 'text/html');
                 htmlDoc.querySelectorAll('pre').forEach(preElement => {
                     preElement.classList.add('pre-code-element', 'relative');
                 });
                 htmlDoc.querySelectorAll('code').forEach(codeElement => {
-                    codeElement.classList.add('hljs', 'language-python', 'input-background', 'p-4', 'pb-2', 'block', 'whitespace-pre', 'overflow-x-scroll');
+                    //codeElement.classList.add('input-background', 'p-4', 'pb-2', 'block', 'whitespace-pre', 'overflow-x-scroll');
                 });
                 
                 htmlDoc.querySelectorAll("pre > code").forEach(createCodeBlockButtons);
                 list.lastChild?.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
                 const updatedMarkedResponse = htmlDoc.documentElement.innerHTML;
+               
                 
 
                 if (existingMessage) {
-                    console.log("Is this happening for multiple messages");
+          
                     existingMessage.innerHTML = updatedMarkedResponse;
+                   
                 } else {
                     list.innerHTML +=
                         `<div data-license="isc-gnc" class="p-4 self-end mt-4 pb-8 answer-element-ext">
@@ -232,7 +251,7 @@
 
                 list.innerHTML +=
                     `<div class="p-4 self-end mt-4 pb-8 error-element-ext" data-license="isc-gnc">
-                        <h2 class="mb-5 flex">${aiSvg}ChatGPT</h2>
+                        <h2 class="mb-5 flex">${aiSvg}Autonimate</h2>
                         <div class="text-red-400">${marked.parse(messageValue)}</div>
                     </div>`;
 
@@ -388,6 +407,7 @@
                 vscode.postMessage({
                     type: "addFreeTextQuestion",
                     value: question.lastElementChild.textContent,
+                    language: language,
                 });
             }
             return;
@@ -432,6 +452,7 @@
             vscode.postMessage({
                 type: "openNew",
                 value: targetButton.parentElement?.nextElementSibling?.lastChild?.textContent,
+                language: language,
             });
 
             return;
@@ -442,6 +463,7 @@
             vscode.postMessage({
                 type: "showDiff",
                 value: targetButton.parentElement?.nextElementSibling?.lastChild?.textContent,
+                language: language,
             });
 
             return;
