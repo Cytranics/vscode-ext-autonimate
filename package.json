@@ -4,7 +4,7 @@
   "displayName": "Autonimate: DevGPT",
   "icon": "images/ai-logo.png",
   "description": "An autonomous development plugin, Autonimate AI Copilot, powered by OpenAI.",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "aiKey": "",
   "repository": {
     "url": "https://github.com/Cytranics/vscode-autonimate"
@@ -12,30 +12,30 @@
   "engines": {
     "vscode": "^1.73.0"
   },
- "categories": [
-  "Data Science",
-  "Formatters",
-  "Programming Languages",
-  "Linters",
-  "Machine Learning"
-],
-"keywords": [
-  "gpt-4",
-  "openai",
-  "codex",
-  "chatgpt",
-  "code generation",
-  "AI in editor",
-  "programming help",
-  "autonomous coding",
-  "AI-powered development",
-  "code suggestions",
-  "code completion",
-  "code refactoring",
-  "AI assistant",
-  "software engineering",
-  "coding assistant"
-],
+  "categories": [
+    "Data Science",
+    "Formatters",
+    "Programming Languages",
+    "Linters",
+    "Machine Learning"
+  ],
+  "keywords": [
+    "gpt-4",
+    "openai",
+    "codex",
+    "chatgpt",
+    "code generation",
+    "AI in editor",
+    "programming help",
+    "autonomous coding",
+    "AI-powered development",
+    "code suggestions",
+    "code completion",
+    "code refactoring",
+    "AI assistant",
+    "software engineering",
+    "coding assistant"
+  ],
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -362,7 +362,6 @@
           "description": "Enable the prompt prefix used for adhoc command for the selected code in the context menu",
           "order": 24
         },
-        
         "autonimate.temperature": {
           "type": "number",
           "default": 0.2,
