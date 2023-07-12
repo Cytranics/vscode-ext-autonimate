@@ -210,13 +210,13 @@
         },
         "autonimate.azureBaseURL": {
           "type": "string",
-          "markdownDescription": "Azure Base URL. Example: https://name.openai.azure.com/",
-          "order": 5
-        },
-        "autonimate.azuredeployment": {
-          "type": "string",
-          "markdownDescription": "Please provide the name you assigned to your Azure model deployment. This refers to the name you created when you deployed the model, not the model itself. For example, it could be GPT-4-Deployment",
+          "markdownDescription": "`Azure:` Base URL. Example: https://name.openai.azure.com/",
           "order": 4
+        },
+        "autonimate.azureDeployment": {
+          "type": "string",
+          "markdownDescription": "`Azure:` Please provide the name you assigned to your Azure model deployment. This refers to the name you created when you deployed the model, not the model itself. For example, it could be GPT-4-Deployment",
+          "order": 5
         },
         "autonimate.model": {
           "type": "string",
@@ -231,7 +231,7 @@
             "gpt-3.5-turbo-16k-0613"
           ],
           "default": "gpt-4-0613",
-          "markdownDescription": "Model Choices when using OpenAI.",
+          "markdownDescription": "`OpenAI:`Model Choices when using OpenAI.",
           "order": 6,
           "enumItemLabels": [
             "GPT-4",
@@ -256,8 +256,8 @@
         },
         "autonimate.maxTokens": {
           "type": "number",
-          "default": 2500,
-          "markdownDescription": "Sets the max number of tokens (characters or words) for the model's output. The total tokens, including the input and output, must not exceed the model's maximum context length (e.g., 4096 for `gpt-3.5-turbo` and 8192 for `gpt-4`). If exceeded, you'll need to reduce the text. More details in the [Documentation](https://beta.openai.com/docs/api-reference/completions/create#completions/create-max_tokens).",
+          "default": 0,
+          "markdownDescription": "Optional: Sets the max number of tokens (characters or words) for the model's output. The total tokens, including the input and output, must not exceed the model's maximum context length (e.g., 4096 for `gpt-3.5-turbo` and 8192 for `gpt-4`). Default is 0 which means it will caclulate on its own.",
           "order": 7
         },
         "autonimate.promptPrefix.refactorCode": {
@@ -397,7 +397,14 @@
           "default": "Follow these steps to assist with the user's Python development query:  Understand the user's query: Determine what the user is asking for and how it relates to the previous conversation. Craft the solution: Generate Python code or guidance that satisfies the user's request. The code should adhere to PEP8 guidelines and pass Pylint checks. Use advanced features: Where appropriate, incorporate Python's latest features, error handling, logging, and advanced features like list comprehensions, decorators, and context managers. Quality and clarity: Aim to produce high-quality, easy-to-understand, and maintainable code or guidance. Review: Ensure your response directly addresses the user's query and is in line with the conversation history. When its time to respond with code, respond with a single codeblock using tripple backtiks.",
           "markdownDescription": "The 'system append prompt' is a predefined text automatically appended at the end of each API call, following your code. This feature assists in maintaining a continuous narrative or 'tree of thought' during the conversation, guiding the AI to provide more contextually relevant and coherent responses.",
           "order": 42
+        },
+        "autonimate.conversationHistoryAmount": {
+          "type": "integer",
+          "default": 5,
+          "description": "The amount of conversations the model will keep in memory.",
+          "order": 43
         }
+      
       }
     }
   },

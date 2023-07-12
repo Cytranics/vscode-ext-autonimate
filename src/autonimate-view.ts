@@ -23,13 +23,12 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 	public subscribeToResponse: boolean;
 	public autoScroll: boolean;
 	public useAutoLogin?: boolean;
-	public useGpt3?: boolean;
 	public chromiumPath?: string;
 	public profilePath?: string;
 	public model?: string = 'gpt-3.5-turbo-16k';
 	public selectedBaseUrl: string;
 	public apiKey: string;
-	public azuredeployment: string;
+	public azureDeployment: string;
 	public max_tokens: number;
 	public temperature: number;
 	public top_p: number;
@@ -38,15 +37,17 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 	public systemPrompt: string;
 	public systemAppendPrompt: string;
 	public method: string;
+	public conversationHistoryAmount: number;
 	private conversationId?: string;
 	public conversationHistory?: any[];
 	private messageState: vscode.Memento;
 	private questionCounter: number = 0;
 	private inProgress: boolean = false;
-	private abortController?: AbortController;
 	private currentMessageId: string = "";
 	private response: string = "";
 	private stream: AsyncIterableIterator<any>;
+	private prompt: string = "";
+	private options: any = {};
 
 	/**
 	 * Message to be rendered lazily if they haven't been rendered
@@ -60,7 +61,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		this.systemPrompt = vscode.workspace.getConfiguration("autonimate").get("systemPrompt") || '';
 		this.systemAppendPrompt = vscode.workspace.getConfiguration("autonimate").get("systemAppendPrompt") || '';
 		this.apiKey = vscode.workspace.getConfiguration("autonimate").get("apiKey") as string;
-		this.azuredeployment = vscode.workspace.getConfiguration("autonimate").get("azuredeployment") as string;
+		this.azureDeployment = vscode.workspace.getConfiguration("autonimate").get("azureDeployment") as string;
 		this.max_tokens = vscode.workspace.getConfiguration("autonimate").get("maxTokens") as number;
 		this.temperature = vscode.workspace.getConfiguration("autonimate").get("temperature") as number;
 		this.top_p = vscode.workspace.getConfiguration("autonimate").get("top_p") as number;
@@ -68,6 +69,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		this.azureBaseUrl = vscode.workspace.getConfiguration("autonimate").get("azureBaseUrl") as string;
 		this.selectedBaseUrl = this.azureBaseUrl && this.azureBaseUrl.trim() !== '' ? this.azureBaseUrl : this.apiBaseUrl;
 		this.method = vscode.workspace.getConfiguration("autonimate").get("method") as string || 'OpenAI';
+		this.conversationHistoryAmount = vscode.workspace.getConfiguration("autonimate").get("conversationHistoryAmount") as number;
 		this.messageState = context.globalState;
 
 
@@ -136,6 +138,8 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 
 
 				case 'showDiff':
+					const editor = vscode.window.activeTextEditor;
+					const selection = editor.document.getText(editor.selection);
 					const activeEditor = vscode.window.activeTextEditor;
 					if (activeEditor) {
 						const document1Uri = activeEditor.document.uri;
@@ -153,7 +157,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 						vscode.commands.executeCommand('vscode.diff',
 							document1Uri,
 							document2Uri,
-							'Autonimate - Left: Current, Right: Generated'
+							'Original <<>> Generated'
 						);
 					}
 					this.logEvent("code-diffed");
@@ -202,7 +206,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		const configuration = vscode.workspace.getConfiguration("autonimate");
 
 		// Prioritize azureBaseUrl if not blank, otherwise use apiBaseUrl	
-		this.azuredeployment = vscode.workspace.getConfiguration("autonimate").get("azuredeployment") as string;
+		this.azureDeployment = vscode.workspace.getConfiguration("autonimate").get("azureDeployment") as string;
 		this.max_tokens = vscode.workspace.getConfiguration("autonimate").get("maxTokens") as number;
 		this.temperature = vscode.workspace.getConfiguration("autonimate").get("temperature") as number;
 		this.top_p = vscode.workspace.getConfiguration("autonimate").get("top_p") as number;
@@ -233,7 +237,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 						.then((value) => {
 							if (value) {
 								this.apiKey = value;
-								state.update("autonimate-gpt3-apiKey", this.apiKey);
+								state.update("autonimate-apiKey", this.apiKey);
 								this.sendMessage({ type: 'loginSuccessful', showConversations: this.useAutoLogin }, true);
 							}
 						});
@@ -247,24 +251,31 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 	}
 
 	public buildMessages(role: string, content: string, systemPrompt?: string, endingPrompt?: string): Array<{ role: string, content: string; }> {
-
+	
 		this.conversationHistory = this.messageState.get("conversationHistory") || [];
-
+	
 		if (systemPrompt) {
 			this.conversationHistory.push({ role: "system", content: systemPrompt });
 		}
-
+	
 		this.conversationHistory.push({ role: role, content: content });
-
+	
 		if (endingPrompt) {
 			this.conversationHistory.push({ role: "assistant", content: endingPrompt });
 		}
+	
+		// Check if conversation history has reached the limit
+		if (this.conversationHistory.length > this.conversationHistoryAmount) {
+			// Remove the second message, preserving the system message
+			this.conversationHistory.splice(1, 1);
+		}
+	
 		this.messageState.update("conversationHistory", this.conversationHistory);
-
+	
 		console.log(this.conversationHistory);
 		return this.messageState.get("conversationHistory");
 	}
-
+	
 	private processQuestion(question: string, code?: string, language?: string) {
 		if (code != null) {
 			// Add prompt prefix to the code if there was a code block selected
@@ -272,59 +283,89 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		}
 		return question + '\r\n';
 	}
-
+	
 	public async sendApiRequest(prompt: string, options: { command: string, code?: string, previousAnswer?: string, language?: string; }) {
+		this.prompt = prompt;
+		this.options = options;
 		if (this.inProgress) {
-			// The AI is still thinking... Do not accept more questions.
 			return;
 		}
-
-		this.logEvent("api-request-sent", { "autonimate-prompt": prompt, "autonimate.command": options.command, "autonimate.hasCode": String(!!options.code), "autonimate.hasPreviousAnswer": String(!!options.previousAnswer) });
-
+	
+		this.logEvent("api-request-sent", this.getAutonimateLogOptions(this.prompt, this.options));
+	
 		if (!await this.prepareConversation()) {
 			return;
 		}
-
-		
-		let question = this.processQuestion(prompt, options.code, options.language);
-
+	
+		let question = this.processQuestion(this.prompt, options.code, options.language);
+	
+		this.updateConversationHistory(question, this.prompt, options);
+	
+		this.focusOnChatGPTView();
+	
+		this.response = "";
+		this.inProgress = true;
+		this.sendMessage({ type: 'showInProgress', inProgress: this.inProgress });
+		this.currentMessageId = this.getRandomId();
+	
+		this.sendMessage({ type: 'addQuestion', value: this.prompt, code: this.options.code, autoScroll: this.autoScroll });
+	
+		let openai = this.initializeOpenAI();
+	
+		try {
+			this.stream = await openai.chat.completions.create(this.getChatCompletionOptions());
+	
+			for await (const part of (this.stream as any)) {
+				this.processStreamPart(part);
+			}
+			
+	
+			//if (this.subscribeToResponse) {
+			//	this.notifyUser();
+			//}
+	
+		} catch (error: any) {
+			this.handleError(error, this.prompt, this.options);
+		} finally {
+			this.inProgress = false;
+			this.sendMessage({ type: 'showInProgress', inProgress: this.inProgress });
+		}
+		this.buildMessages("assistant", this.response);
+		this.handleContinuation(this.prompt, this.options);
+	}
+	
+	private getAutonimateLogOptions(prompt: string, options: { command: string, code?: string, previousAnswer?: string, language?: string; }) {
+		return {
+			"autonimate-prompt": prompt,
+			"autonimate.command": options.command,
+			"autonimate.hasCode": String(!!options.code),
+			"autonimate.hasPreviousAnswer": String(!!options.previousAnswer)
+		};
+	}
+	
+	private updateConversationHistory(question: string, prompt: string, options: { command: string, code?: string, previousAnswer?: string, language?: string; }) {
 		if (this.questionCounter === 0) {
-			console.log("Forming Conversation History");
 			this.questionCounter++;
 			this.messageState.update("conversationHistory", []);
 			this.conversationHistory = this.buildMessages("user", question, this.systemPrompt, this.systemAppendPrompt);
-			this.logEvent("api-request-sent", {
-				"autonimate-prompt": prompt,
-				"autonimate.command": options.command,
-				"autonimate.hasCode": String(!!options.code),
-				"autonimate.hasPreviousAnswer": String(!!options.previousAnswer)
-			});
+			this.logEvent("api-request-sent", this.getAutonimateLogOptions(prompt, options));
 		} else {
-			console.log("Building Conversation History");
 			this.conversationHistory = this.buildMessages("user", question);
 			this.questionCounter++;
 		}
-
-
-
-		// If the ChatGPT view is not in focus/visible; focus on it to render Q&A
+	}
+	
+	private focusOnChatGPTView() {
 		if (this.webView == null) {
 			vscode.commands.executeCommand('autonimate.view.focus');
 		} else {
 			this.webView?.show?.(true);
 		}
-		this.response = "";
-		this.inProgress = true;
-		this.abortController = new AbortController();
-		this.sendMessage({ type: 'showInProgress', inProgress: this.inProgress, showStopButton: this.useGpt3 });
-		this.currentMessageId = this.getRandomId();
-
-		this.sendMessage({ type: 'addQuestion', value: prompt, code: options.code, autoScroll: this.autoScroll });
-		console.log("Messages sent to WebView");
-		console.log(this.conversationHistory);
-
+	}
+	
+	private initializeOpenAI() {
 		let openai = {} as any;
-
+	
 		if (this.method == "Azure") {
 			openai = new OpenAI({
 				apiKey: this.apiKey,
@@ -337,113 +378,130 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 				apiKey: this.apiKey,
 				baseURL: this.apiBaseUrl
 			});
-
 		}
-		try {
-			this.stream = await openai.chat.completions.create({
-				model: this.model || 'gpt-3.5-turbo-16k',
-				messages: this.conversationHistory,
-				temperature: this.temperature,
-				top_p: this.top_p,
-				stream: true,
-			});
-
-			for await (const part of (this.stream as any)) {
-				//if (this.inProgress === false) {
-				//	result.controller.abort()
-				//	break;
-				//}
-				if (part.error) {
-					this.sendMessage({ type: 'addError', value: part.error, autoScroll: this.autoScroll });
-					this.inProgress = false;
-					this.sendMessage({ type: 'showInProgress', inProgress: this.inProgress });
-				}
-
-				if (part.id) {
-					this.conversationId = part.id;
-					
-					if (part.choices[0].delta?.content && this.inProgress) {
-						this.response += part.choices[0].delta.content;
-					
-						this.sendMessage({ type: 'addResponse', value: this.response, id: this.conversationId, autoScroll: this.autoScroll });
-
-					}
-
-				} else {
-					console.log('Error: No delta.content found' + part);
-				}
-
-			}
-			const hasContinuation = ((this.response.split("```").length) % 2) === 0;
-			if (this.response === '{}' && !hasContinuation) {
-				this.buildMessages("assistant", this.response);
-				this.sendMessage({ type: 'stopGenerating', value: this.response, done: true, id: this.currentMessageId, autoScroll: this.autoScroll });
-			} else {
-				if (hasContinuation) {
-					this.response += " \r\n ```\r\n";
-					vscode.window.showInformationMessage("It looks like autonimate didn't complete their answer for your coding question. You can ask it to continue and combine the answers.", "Continue and combine answers")
-						.then(async (choice) => {
-							if (choice === "Continue and combine answers") {
-								this.sendApiRequest("Continue", { command: options.command, code: undefined, previousAnswer: this.response });
-							}
-						});
-				}
-			}
-
-
-
-
-
-			if (this.subscribeToResponse) {
-				vscode.window.showInformationMessage("Autonimate responded to your question.", "Open conversation").then(async () => {
-					await vscode.commands.executeCommand('autonimate.view.focus');
-				});
-			}
-
-
-		} catch (error: any) {
-			let message;
-			let apiMessage = error?.response?.data?.error?.message || error?.tostring?.() || error?.message || error?.name;
-
-			this.logError("api-request-failed");
-
-			if (error?.response?.status || error?.response?.statusText) {
-				message = `${error?.response?.status || ""} ${error?.response?.statusText || ""}`;
-
-				vscode.window.showErrorMessage("An error occured. If this is due to max_token you could try `ChatGPT: Clear Conversation` command and retry sending your prompt.", "Clear conversation and retry").then(async choice => {
-					if (choice === "Clear conversation and retry") {
-						await vscode.commands.executeCommand("autonimate.clearConversation");
-						await delay(250);
-						this.sendApiRequest(prompt, { command: options.command, code: options.code });
-					}
-				});
-			} else if (error.statusCode === 400) {
-				message = `Your model: '${this.model}' may be incompatible or one of your parameters is unknown. Reset your settings to default. (HTTP 400 Bad Request)`;
-
-			} else if (error.statusCode === 401) {
-				message = 'Make sure you are properly signed in. If you are using Browser Auto-login method, make sure the browser is open (You could refresh the browser tab manually if you face any issues, too). If you stored your API key in settings.json, make sure it is accurate. If you stored API key in session, you can reset it with `ChatGPT: Reset session` command. (HTTP 401 Unauthorized) Potential reasons: \r\n- 1.Invalid Authentication\r\n- 2.Incorrect API key provided.\r\n- 3.Incorrect Organization provided. \r\n See https://platform.openai.com/docs/guides/error-codes for more details.';
-			} else if (error.statusCode === 403) {
-				message = 'Your token has expired. Please try authenticating again. (HTTP 403 Forbidden)';
-			} else if (error.statusCode === 404) {
-				message = `Your model: '${this.model}' may be incompatible or you may have exhausted your ChatGPT subscription allowance. (HTTP 404 Not Found)`;
-			} else if (error.statusCode === 429) {
-				message = "Too many requests try again later. (HTTP 429 Too Many Requests) Potential reasons: \r\n 1. You exceeded your current quota, please check your plan and billing details\r\n 2. You are sending requests too quickly \r\n 3. The engine is currently overloaded, please try again later. \r\n See https://platform.openai.com/docs/guides/error-codes for more details.";
-			} else if (error.statusCode === 500) {
-				message = "The server had an error while processing your request, please try again. (HTTP 500 Internal Server Error)\r\n See https://platform.openai.com/docs/guides/error-codes for more details.";
-			}
-
-			if (apiMessage) {
-				message = `${message ? message + " " : ""}${apiMessage}`;
-			}
-
-			this.sendMessage({ type: 'addError', value: message, autoScroll: this.autoScroll });
-
-			return;
-		} finally {
+	
+		return openai;
+	}
+	
+	private getChatCompletionOptions() {
+		let options: {
+			model: string;
+			messages: any[];
+			temperature: number;
+			top_p: number;
+			stream: boolean;
+			max_tokens?: number; // add max_tokens as an optional property
+		} = {
+			model: this.model || 'gpt-3.5-turbo-16k',
+			messages: this.conversationHistory,
+			temperature: this.temperature,
+			top_p: this.top_p,
+			stream: true,
+		};
+	
+		if (this.max_tokens !== 0) {
+			options.max_tokens = this.max_tokens; //ignore max_tokens if 0
+		}
+	
+		return options;
+	}
+	
+	
+	private processStreamPart(part: any) {
+		if (part.error) {
+			this.sendMessage({ type: 'addError', value: part.error, autoScroll: this.autoScroll });
 			this.inProgress = false;
 			this.sendMessage({ type: 'showInProgress', inProgress: this.inProgress });
 		}
+	
+		if (part.id) {
+			this.conversationId = part.id;
+	
+			if (part.choices[0].delta?.content && this.inProgress) {
+				this.response += part.choices[0].delta.content;
+	
+				this.sendMessage({ type: 'addResponse', value: this.response, id: this.conversationId, autoScroll: this.autoScroll });
+	
+			}
+			
+		} else {
+			console.log('Error: No delta.content found' + part);
+		}
+		
 	}
+	
+	private handleContinuation(prompt: string, options: { command: string, code?: string, previousAnswer?: string, language?: string; }) {
+		const hasContinuation = ((this.response.split("```").length) % 2) === 0;
+		if (!hasContinuation) {
+			this.buildMessages("assistant", this.response);
+			this.sendMessage({ type: 'stopGenerating', value: this.response, done: true, id: this.currentMessageId, autoScroll: this.autoScroll });
+		} else {
+			if (hasContinuation) {
+				this.response += " \r\n ```\r\n";
+				vscode.window.showInformationMessage("It looks like autonimate didn't complete their answer for your coding question. You can ask it to continue and combine the answers.", "Continue and combine answers")
+					.then(async (choice) => {
+						if (choice === "Continue and combine answers") {
+							this.sendApiRequest("Continue", { command: options.command, code: undefined, previousAnswer: this.response });
+						}
+					});
+			}
+		}
+	}
+	
+	private notifyUser() {
+		vscode.window.showInformationMessage("Autonimate responded to your question.", "Open conversation").then(async () => {
+			await vscode.commands.executeCommand('autonimate.view.focus');
+		});
+	}
+	
+	private handleError(error: any, prompt: string, options: { command: string, code?: string, previousAnswer?: string, language?: string; }) {
+		let message;
+		let apiMessage = error?.response?.data?.error?.message || error?.tostring?.() || error?.message || error?.name;
+	
+		this.logError("api-request-failed");
+	
+		message = this.getErrorMessage(error, apiMessage);
+	
+		this.sendMessage({ type: 'addError', value: message, autoScroll: this.autoScroll });
+	
+		return;
+	}
+	
+	private getErrorMessage(error: any, apiMessage: string) {
+		let message;
+	
+		if (error?.response?.status || error?.response?.statusText) {
+			message = `${error?.response?.status || ""} ${error?.response?.statusText || ""}`;
+	
+			vscode.window.showErrorMessage("An error occured. If this is due to max_token you could try `ChatGPT: Clear Conversation` command and retry sending your prompt.", "Clear conversation and retry").then(async choice => {
+				if (choice === "Clear conversation and retry") {
+					await vscode.commands.executeCommand("autonimate.clearConversation");
+					await delay(250);
+					this.sendApiRequest(this.prompt, { command: this.options.command, code: this.options.code });
+				}
+			});
+		} else if (error.statusCode === 400) {
+			message = `Your model: '${this.model}' may be incompatible or one of your parameters is unknown. Reset your settings to default. (HTTP 400 Bad Request)`;
+	
+		} else if (error.statusCode === 401) {
+			message = 'Make sure you are properly signed in. If you are using Browser Auto-login method, make sure the browser is open (You could refresh the browser tab manually if you face any issues, too). If you stored your API key in settings.json, make sure it is accurate. If you stored API key in session, you can reset it with `ChatGPT: Reset session` command. (HTTP 401 Unauthorized) Potential reasons: \r\n- 1.Invalid Authentication\r\n- 2.Incorrect API key provided.\r\n- 3.Incorrect Organization provided. \r\n See https://platform.openai.com/docs/guides/error-codes for more details.';
+		} else if (error.statusCode === 403) {
+			message = 'Your token has expired. Please try authenticating again. (HTTP 403 Forbidden)';
+		} else if (error.statusCode === 404) {
+			message = `Your model: '${this.model}' may be incompatible or you may have exhausted your ChatGPT subscription allowance. (HTTP 404 Not Found)`;
+		} else if (error.statusCode === 429) {
+			message = "Too many requests try again later. (HTTP 429 Too Many Requests) Potential reasons: \r\n 1. You exceeded your current quota, please check your plan and billing details\r\n 2. You are sending requests too quickly \r\n 3. The engine is currently overloaded, please try again later. \r\n See https://platform.openai.com/docs/guides/error-codes for more details.";
+		} else if (error.statusCode === 500) {
+			message = "The server had an error while processing your request, please try again. (HTTP 500 Internal Server Error)\r\n See https://platform.openai.com/docs/guides/error-codes for more details.";
+		}
+	
+		if (apiMessage) {
+			message = `${message ? message + " " : ""}${apiMessage}`;
+		}
+	
+		return message;
+	}
+	
 
 	/**
 	 * Message sender, stores if a message cannot be delivered

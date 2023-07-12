@@ -50,7 +50,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	const clearSession = vscode.commands.registerCommand("autonimate.clearSession", () => {
-		context.globalState.update("autonimate-gpt3-apiKey", null);
+		context.globalState.update("autonimate-apiKey", null);
 
 		provider?.clearSession();
 	});
@@ -83,7 +83,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			e.affectsConfiguration("autonimate.apiBaseUrl") ||
 			e.affectsConfiguration("autonimate.azureBaseURL") ||
 			e.affectsConfiguration("autonimate.model") ||
-			e.affectsConfiguration("autonimate.azuredeployment") ||
+			e.affectsConfiguration("autonimate.azureDeployment") ||
 			e.affectsConfiguration("autonimate.maxTokens") ||
 			e.affectsConfiguration("autonimate.temperature") ||
 			e.affectsConfiguration("autonimate.top_p") ||
