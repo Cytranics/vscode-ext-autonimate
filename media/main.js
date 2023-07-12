@@ -174,6 +174,7 @@
                 let updatedValue = "";
                 let rawValue = "";
                 
+                rawValue = message.value
                 updatedValue = message.value.split("```").length % 2 === 1 ? message.value : message.value + "\n\n```\n\n";
                 updatedValue = message.value.replace(/`([^`]{1})`/g, '<code>$1</code>');                 
                 
