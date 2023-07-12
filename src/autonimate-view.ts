@@ -276,15 +276,15 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		return this.messageState.get("conversationHistory");
 	}
 	
-	private processQuestion(question: string, code?: string, language?: string) {
+	private processQuestion(question: string, code?: string, language?: string, imports?: string) {
 		if (code != null) {
 			// Add prompt prefix to the code if there was a code block selected
-			question = `${question}${language ? ` (The following code is in ${language} programming language.)` : ''}: ${code}`;
-		}
+			question = `${question}${language ? ` (This ${language} code uses these imports for reference, do not include in your response: ${imports}.)` : ''}: ${code}`;
+		}	console.log(question);
 		return question + '\r\n';
 	}
 	
-	public async sendApiRequest(prompt: string, options: { command: string, code?: string, previousAnswer?: string, language?: string; }) {
+	public async sendApiRequest(prompt: string, options: { command: string, code?: string, previousAnswer?: string, language?: string; imports?: string;}) {
 		this.prompt = prompt;
 		this.options = options;
 		if (this.inProgress) {
@@ -297,7 +297,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 			return;
 		}
 	
-		let question = this.processQuestion(this.prompt, options.code, options.language);
+		let question = this.processQuestion(this.prompt, options.code, options.language, options.imports);
 	
 		this.updateConversationHistory(question, this.prompt, options);
 	
@@ -330,7 +330,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 			this.inProgress = false;
 			this.sendMessage({ type: 'showInProgress', inProgress: this.inProgress });
 		}
-		this.buildMessages("assistant", this.response);
+		//this.buildMessages("assistant", this.response);
 		this.handleContinuation(this.prompt, this.options);
 	}
 	

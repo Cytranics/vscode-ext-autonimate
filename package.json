@@ -435,7 +435,6 @@
   },
   "dependencies": {
     "delay": "^5.0.0",
-    "diff": "^5.1.0",
     "eventsource-parser": "^0.1.0",
     "gpt3-tokenizer": "^1.1.5",
     "isomorphic-fetch": "^3.0.0",
