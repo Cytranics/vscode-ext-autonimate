@@ -290,6 +290,18 @@
         }
     };
 
+    const addAutonimateQuestion = () => {
+        const input = document.getElementById("question-input");
+        if (input.value?.length > 0) {
+            vscode.postMessage({
+                type: "engineerQuestion",
+                value: input.value,
+            });
+
+            input.value = "";
+        }
+    };
+
     const clearConversation = () => {
         document.getElementById("qa-list").innerHTML = "";
 
@@ -359,6 +371,11 @@
         if (targetButton?.id === "ask-button") {
             e.preventDefault();
             addFreeTextQuestion();
+            return;
+        }
+        if (targetButton?.id === "autonimate-button") {
+            e.preventDefault();
+            addAutonimateQuestion();
             return;
         }
 

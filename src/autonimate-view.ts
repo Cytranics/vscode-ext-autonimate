@@ -100,6 +100,12 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 				case 'addFreeTextQuestion':
 					this.sendApiRequest(data.value, { command: "freeText" });
 					break;
+
+				case 'engineerQuestion':
+					this.sendApiRequest(data.value, { command: "engineerQuestion" });
+					break;
+
+
 				case 'editCode':
 					const escapedString = (data.value as string).replace(/\$/g, '\\$');;
 					vscode.window.activeTextEditor?.insertSnippet(new vscode.SnippetString(escapedString));
@@ -200,12 +206,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 
 
 	public async prepareConversation(modelChanged = false): Promise<boolean> {
-
-
-		const state = this.context.globalState;
-		const configuration = vscode.workspace.getConfiguration("autonimate");
-
-		// Prioritize azureBaseUrl if not blank, otherwise use apiBaseUrl	
+		const state = this.context.globalState;	
 		this.azureDeployment = vscode.workspace.getConfiguration("autonimate").get("azureDeployment") as string;
 		this.max_tokens = vscode.workspace.getConfiguration("autonimate").get("maxTokens") as number;
 		this.temperature = vscode.workspace.getConfiguration("autonimate").get("temperature") as number;
@@ -250,7 +251,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		return true;
 	}
 
-	public buildMessages(role: string, content: string, systemPrompt?: string, endingPrompt?: string): Array<{ role: string, content: string; }> {
+	public buildMessages(role: string, content?: string, systemPrompt?: string, endingPrompt?: string): Array<{ role: string, content: string; }> {
 	
 		this.conversationHistory = this.messageState.get("conversationHistory") || [];
 	
@@ -274,6 +275,46 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 	
 		console.log(this.conversationHistory);
 		return this.messageState.get("conversationHistory");
+	}
+
+	public generateNewMessage(i: number, question: string): void{
+		this.messageState.update("conversationHistory", []);
+	
+		
+		
+		if (i === 0) {
+			//decompose
+			this.buildMessages("system", `Decompose the users query. Using the first person, elucidate the softwre the user wishes to create. You cannot ask questions or make up things. Build upon the users query to make a detailed statement in the first person and ensure you include any specific details the user included. Include the Original user query along with your outline. Format your response so that a GPT model can understand.`);
+			this.buildMessages("user", question);
+		
+		}
+		if (i === 1) {
+			//generate specs
+			this.buildMessages("system", "Take the users high level detail of the users query and create a detailed Software Requirements Specification that outlines the functional and non-functional requirements of the software, providing a detailed description of how the software should behave, what features it should have, and any constraints or limitations it may have. This needs to serve as the blueprint for the development that will be working on the users software program. The Software Requirements Specification needs to include each of the following sections: Introduction: Provides an overview of the users query and what exactly the user wants created. Include the original query along with a detailed summary. Scope: Defines the boundaries and limitations of the software, specifying what is included and what is not. Functional Requirements: Describes the specific features, functionalities, and behaviors of the software. It includes use cases, user stories, and detailed descriptions of how the software should respond to various inputs and scenarios. Non-functional Requirements: Specifies the qualities and characteristics of the software, such as performance, reliability, scalability, usability, security, and other constraints or quality attributes. System Architecture: Outlines the structure of the software, including its filenames, components, modules, and their interactions. Data Requirements: Defines the data structures, databases, and data flow within the software, including any data validation rules, constraints and table names. Assumptions and Dependencies: Lists any assumptions made during the requirements gathering process and identifies any external systems or dependencies the software relies upon. Filenames: At the end list all the filenames for each code file. For example, python should always start with a main.py, HTML should always start with index.html, ect. This specification will be used later as the basis for my implementation, so ensure your response is detailed and it is not a basic sheet, it needs to be a detailed spec sheet. Finally ensure all the language is formatted so a GPT Language model can understand as they will be the one designing the code, do not suggest things a GPT model cannot do.");
+			this.buildMessages("user", this.response);
+		}
+		if (i === 2) {
+			//reveiw specs
+			this.buildMessages("system", "Act as a pragmatic principal software engineer with a critical eye for detail and a deep understanding of programming practices, software requirements, and optimization strategies. You've been presented with a detailed Software Requirements Specification (SRS) document for an upcoming project. Your task is to thoroughly review this document, bearing in mind the following key points:Confirm that the specification is sufficiently detailed, allowing the software to be coded as precisely as intended. The SRS should adequately define the behavior, functionality, and interfaces of the software.Examine if there are any vital elements missing from the SRS that could potentially cause the software not to work as intended. This could include overlooked user requirements, data handling processes, security measures, or interface details.Evaluate the document to ascertain if any aspect of the software design can be optimized or simplified, without compromising the overall function and performance. Consider the maintainability, reusability, and efficiency of the proposed software components.Review whether the requirements leverage modern programming methodologies and make the best use of the latest version of the software language in question.After addressing these points, please redraft the SRS into a final low-level document. This updated SRS should be thoroughly detailed and contain every essential element such as the required functions, class definitions, file names, and other necessary components. The document should be devoid of commentary and instead focus solely on providing clear, unambiguous specifications so that a GPT model can program the code.");
+			this.buildMessages("user", this.response);
+		}
+		if (i === 3) {
+			//generate code
+			this.buildMessages("system", "Follow the Software Requirements Specification and create the final code for the user in their language of choice. Break down the requirement document into a  step by step process and reason with yourself to the make the right decisions to ensure the code is 100% corect and complete for your final response. Start with the main entrypoint file and work your way down line by line implementing all the logic. For python the main main should be called main.py Please note that the code needs to be fully functional and contain all the logic without omitting any code or using placeholders. Do not use any placeholders, you must respond with a 100% completed filename and code. Follow the language and framework appropriate best practices including error handling and logging. Prioritize classes then functions. Implement logging and debugging using the language default logging options. Ensure the code conforms to proper standards such as pep8, pylint for python. Utilize similar recommendations for other languages. Make sure that each file contain all imports, references, types, modules and other requirements.  The code should be fully functional without errors. Ensure that each file are compatible with each other or reference each other if needed. Before you finish, double check that all parts of the architecture is present in the files and the code can be executed without errors. Output the content of each file in seperate codeblocks using tripple backtiks.");
+			this.buildMessages("user", this.response);
+		}
+		if (i === 4) {
+			//review code
+			this.buildMessages("system", "Preface your response with 'QA:'Take on the role of an expert code reviewer. Your job is to analyze the code you were given and respond back with every line of code you were given that includes any modifications. You may not ask questions, and you must respond back with the entire code you were given. 1. First, analyze the code step by step to detect any syntax errors. 2. Next, analyze the code line by line to ensure there is no missing logic or placeholders, if there is create the logic. 3. Next analyze the code to determine if there is exception handling around all external API's and all calls that would produce errors. 4. Next respond back with the entire code that contains any fixes or logic, If you are unsure of the logic, implement a plausable solution. 6. Next, implement any missing exception handling. 7. Finally, implement debug logging around all outputs and variables using the default logging for the language the code is written in. Respond with the final output containing ALL the content and modifications and seperate each file into multiple codeblocks with tripple backtiks, even if the file did not change. Its imperritive that you respond with the entire code otherwise there will be errors.");
+			this.buildMessages("user", this.response);
+		}
+		/* if (i === 5) {
+			
+			this.buildMessages("system", "Act as a vetern code test implementer and create testing code for the users code files. Try to create a single response with all the testing that imports all the files if needed.");
+			this.buildMessages("user", this.response);
+		} */
+		
+		
 	}
 	
 	private processQuestion(question: string, code?: string, language?: string, imports?: string) {
@@ -313,15 +354,25 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		let openai = this.initializeOpenAI();
 	
 		try {
-			this.stream = await openai.chat.completions.create(this.getChatCompletionOptions());
-	
-			for await (const part of (this.stream as any)) {
-				this.processStreamPart(part);
+			if (options.command === 'engineerQuestion') {
+				for (let i = 0; i < 5; i++) {
+					// Generate a new message for each iteration
+					this.generateNewMessage(i, question);
+					this.response = "";
+					this.stream = await openai.chat.completions.create(this.getChatCompletionOptions());
+					for await (const part of (this.stream as any)) {
+						this.processStreamPart(part);
+					}
+				}
+			} else {
+				this.stream = await openai.chat.completions.create(this.getChatCompletionOptions());
+				for await (const part of (this.stream as any)) {
+					this.processStreamPart(part);
+				}
 			}
-			
 	
 			//if (this.subscribeToResponse) {
-			//	this.notifyUser();
+			//    this.notifyUser();
 			//}
 	
 		} catch (error: any) {
@@ -333,6 +384,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		//this.buildMessages("assistant", this.response);
 		this.handleContinuation(this.prompt, this.options);
 	}
+	
 	
 	private getAutonimateLogOptions(prompt: string, options: { command: string, code?: string, previousAnswer?: string, language?: string; }) {
 		return {
@@ -565,11 +617,12 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 								
 								<h2>Features</h2>
 								<ul class="flex flex-col gap-3.5 text-xs">
+									<li class="p-3 border-2 border-zinc-700 rounded-md">BETA: Exclusive Autonomous Coding! Tell Autonimate what you want, and click the red send button!</li>
 									<li class="p-3 border-2 border-zinc-700 rounded-md">Advanced Prompting Support</li>
-  <li class="p-3 border-2 border-zinc-700 rounded-md">OpenAI and Azure Compatibility</li>
-  <li class="p-3 border-2 border-zinc-700 rounded-md">Copy, Create, and Diff Functionality</li>
-  <li class="p-3 border-2 border-zinc-700 rounded-md">Auto-Detect Syntax Highlighting</li>
-  <li class="p-3 border-2 border-zinc-700 rounded-md">Conversation History</li>
+									<li class="p-3 border-2 border-zinc-700 rounded-md">OpenAI and Azure Compatibility</li>
+									<li class="p-3 border-2 border-zinc-700 rounded-md">Copy, Create, and Diff Functionality</li>
+									<li class="p-3 border-2 border-zinc-700 rounded-md">Auto-Detect Syntax Highlighting</li>
+									<li class="p-3 border-2 border-zinc-700 rounded-md">Conversation History</li>
 								</ul>
 							</div>
 						</div>
@@ -587,7 +640,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 					<div class="flex-1 overflow-y-auto hidden" id="conversation-list" data-license="isc-gnc"></div>
 
 					<div id="in-progress" class="pl-4 pt-2 flex items-center hidden" data-license="isc-gnc">
-						<div class="typing">Thinking</div>
+						<div class="typing">Autonimating....</div>
 						<div class="spinner">
 							<div class="bounce1"></div>
 							<div class="bounce2"></div>
@@ -619,6 +672,9 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 
 							<button id="ask-button" title="Submit prompt" class="ask-button rounded-lg p-0.5">
 								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
+							</button>
+							<button id="autonimate-button" title="Autonimate" class="ask-button rounded-lg p-0.5">
+								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="red" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
 							</button>
 						</div>
 					</div>
