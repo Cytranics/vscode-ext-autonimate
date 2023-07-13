@@ -174,6 +174,7 @@
                 let updatedValue = "";
                 let rawValue = "";
                 
+                rawValue = message.value
                 updatedValue = message.value.split("```").length % 2 === 1 ? message.value : message.value + "\n\n```\n\n";
                 updatedValue = message.value.replace(/`([^`]{1})`/g, '<code>$1</code>');                 
                 
@@ -289,6 +290,18 @@
         }
     };
 
+    const addAutonimateQuestion = () => {
+        const input = document.getElementById("question-input");
+        if (input.value?.length > 0) {
+            vscode.postMessage({
+                type: "engineerQuestion",
+                value: input.value,
+            });
+
+            input.value = "";
+        }
+    };
+
     const clearConversation = () => {
         document.getElementById("qa-list").innerHTML = "";
 
@@ -358,6 +371,11 @@
         if (targetButton?.id === "ask-button") {
             e.preventDefault();
             addFreeTextQuestion();
+            return;
+        }
+        if (targetButton?.id === "autonimate-button") {
+            e.preventDefault();
+            addAutonimateQuestion();
             return;
         }
 

@@ -1,23 +1,12 @@
 ## Features
 
-Experience a highly customizable and powerful development experience with Autonimate, the only Visual Studio Code Extension offering both System Prompt and System Append Prompt customization. This extension supports advanced prompting techniques like the 'Tree of Thought', and is perfect for developers who want to maintain a consistent narrative during their coding sessions.
+Experience unparalleled autonomous coding with Autonimate, the exclusive Visual Studio Code Extension that revolutionizes your development process. Harness the power of AI to effortlessly generate code based on your queries. Simply state your desired outcome, click the red button, and watch Autonimate take care of the rest.
 
 **Key Features:**
-- **System Prompt and System Append Prompt customization**: Tailor the AI's responses to your needs by customizing the initial prompt and the text that gets appended to each API call.
-- **Support for GPT-3.5 and GPT-4 Models**: Choose from various model options, including support for 18k and 32k token models, to suit the complexity of your tasks.
-- **Azure and OpenAI Integration**: Enjoy seamless integration with both Azure and OpenAI platforms for a versatile coding experience.
-- **Inherited Features from ChatGPT**: Autonimate inherits all the loved features of the now-retired ChatGPT extension, taking its legacy forward.
+- **Unprecedented Autonomous Coding**: Be amazed as Autonimate autonomously generates code based on your queries, making coding a breeze.
+- **Customizable System Prompt and System Append Prompt**: Personalize the AI's responses by customizing the initial prompt and the text appended to each API call.
+- **Wide Model Selection**: Choose from cutting-edge GPT-3.5 and GPT-4 models, including 18k and 32k token models, to tackle tasks of any complexity.
+- **Seamless Azure and OpenAI Integration**: Enjoy effortless integration with both Azure and OpenAI platforms, enhancing your coding experience.
+- **Built on the Success of ChatGPT**: Autonimate builds upon the beloved features of the retired ChatGPT extension, carrying its legacy forward.
 
-## Building and Running the Extension
-
-- Clone the repository to your local machine.
-- Navigate to the root directory and run the `yarn` command to install the dependencies listed in `package.json`.
-- Launch the project in Visual Studio Code and press `F5` to run it.
-
-## Local Installation
-
-- If not already installed, get the Visual Studio Code Extension Manager (`vsce`) on your machine using the command `npm install --global vsce`.
-- Execute `vsce package` command.
-- Follow the [instructions](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix) to manually install the generated .vsix file.
-
-Your feedback and suggestions are welcome as we continually strive to improve this extension and provide a productive and enjoyable coding experience.
+We value your feedback and suggestions as we continuously enhance this extension to provide the ultimate autonomous coding experience.

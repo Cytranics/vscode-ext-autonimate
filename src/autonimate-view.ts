@@ -23,13 +23,12 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 	public subscribeToResponse: boolean;
 	public autoScroll: boolean;
 	public useAutoLogin?: boolean;
-	public useGpt3?: boolean;
 	public chromiumPath?: string;
 	public profilePath?: string;
 	public model?: string = 'gpt-3.5-turbo-16k';
 	public selectedBaseUrl: string;
 	public apiKey: string;
-	public azuredeployment: string;
+	public azureDeployment: string;
 	public max_tokens: number;
 	public temperature: number;
 	public top_p: number;
@@ -38,15 +37,17 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 	public systemPrompt: string;
 	public systemAppendPrompt: string;
 	public method: string;
+	public conversationHistoryAmount: number;
 	private conversationId?: string;
 	public conversationHistory?: any[];
 	private messageState: vscode.Memento;
 	private questionCounter: number = 0;
 	private inProgress: boolean = false;
-	private abortController?: AbortController;
 	private currentMessageId: string = "";
 	private response: string = "";
 	private stream: AsyncIterableIterator<any>;
+	private prompt: string = "";
+	private options: any = {};
 
 	/**
 	 * Message to be rendered lazily if they haven't been rendered
@@ -60,7 +61,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		this.systemPrompt = vscode.workspace.getConfiguration("autonimate").get("systemPrompt") || '';
 		this.systemAppendPrompt = vscode.workspace.getConfiguration("autonimate").get("systemAppendPrompt") || '';
 		this.apiKey = vscode.workspace.getConfiguration("autonimate").get("apiKey") as string;
-		this.azuredeployment = vscode.workspace.getConfiguration("autonimate").get("azuredeployment") as string;
+		this.azureDeployment = vscode.workspace.getConfiguration("autonimate").get("azureDeployment") as string;
 		this.max_tokens = vscode.workspace.getConfiguration("autonimate").get("maxTokens") as number;
 		this.temperature = vscode.workspace.getConfiguration("autonimate").get("temperature") as number;
 		this.top_p = vscode.workspace.getConfiguration("autonimate").get("top_p") as number;
@@ -68,6 +69,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		this.azureBaseUrl = vscode.workspace.getConfiguration("autonimate").get("azureBaseUrl") as string;
 		this.selectedBaseUrl = this.azureBaseUrl && this.azureBaseUrl.trim() !== '' ? this.azureBaseUrl : this.apiBaseUrl;
 		this.method = vscode.workspace.getConfiguration("autonimate").get("method") as string || 'OpenAI';
+		this.conversationHistoryAmount = vscode.workspace.getConfiguration("autonimate").get("conversationHistoryAmount") as number;
 		this.messageState = context.globalState;
 
 
@@ -98,6 +100,12 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 				case 'addFreeTextQuestion':
 					this.sendApiRequest(data.value, { command: "freeText" });
 					break;
+
+				case 'engineerQuestion':
+					this.sendApiRequest(data.value, { command: "engineerQuestion" });
+					break;
+
+
 				case 'editCode':
 					const escapedString = (data.value as string).replace(/\$/g, '\\$');;
 					vscode.window.activeTextEditor?.insertSnippet(new vscode.SnippetString(escapedString));
@@ -136,6 +144,8 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 
 
 				case 'showDiff':
+					const editor = vscode.window.activeTextEditor;
+					const selection = editor.document.getText(editor.selection);
 					const activeEditor = vscode.window.activeTextEditor;
 					if (activeEditor) {
 						const document1Uri = activeEditor.document.uri;
@@ -153,7 +163,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 						vscode.commands.executeCommand('vscode.diff',
 							document1Uri,
 							document2Uri,
-							'Autonimate - Left: Current, Right: Generated'
+							'Original <<>> Generated'
 						);
 					}
 					this.logEvent("code-diffed");
@@ -196,13 +206,8 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 
 
 	public async prepareConversation(modelChanged = false): Promise<boolean> {
-
-
-		const state = this.context.globalState;
-		const configuration = vscode.workspace.getConfiguration("autonimate");
-
-		// Prioritize azureBaseUrl if not blank, otherwise use apiBaseUrl	
-		this.azuredeployment = vscode.workspace.getConfiguration("autonimate").get("azuredeployment") as string;
+		const state = this.context.globalState;	
+		this.azureDeployment = vscode.workspace.getConfiguration("autonimate").get("azureDeployment") as string;
 		this.max_tokens = vscode.workspace.getConfiguration("autonimate").get("maxTokens") as number;
 		this.temperature = vscode.workspace.getConfiguration("autonimate").get("temperature") as number;
 		this.top_p = vscode.workspace.getConfiguration("autonimate").get("top_p") as number;
@@ -233,7 +238,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 						.then((value) => {
 							if (value) {
 								this.apiKey = value;
-								state.update("autonimate-gpt3-apiKey", this.apiKey);
+								state.update("autonimate-apiKey", this.apiKey);
 								this.sendMessage({ type: 'loginSuccessful', showConversations: this.useAutoLogin }, true);
 							}
 						});
@@ -246,85 +251,173 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		return true;
 	}
 
-	public buildMessages(role: string, content: string, systemPrompt?: string, endingPrompt?: string): Array<{ role: string, content: string; }> {
-
+	public buildMessages(role: string, content?: string, systemPrompt?: string, endingPrompt?: string): Array<{ role: string, content: string; }> {
+	
 		this.conversationHistory = this.messageState.get("conversationHistory") || [];
-
+	
 		if (systemPrompt) {
 			this.conversationHistory.push({ role: "system", content: systemPrompt });
 		}
-
+	
 		this.conversationHistory.push({ role: role, content: content });
-
+	
 		if (endingPrompt) {
 			this.conversationHistory.push({ role: "assistant", content: endingPrompt });
 		}
+	
+		// Check if conversation history has reached the limit
+		if (this.conversationHistory.length > this.conversationHistoryAmount) {
+			// Remove the second message, preserving the system message
+			this.conversationHistory.splice(1, 1);
+		}
+	
 		this.messageState.update("conversationHistory", this.conversationHistory);
-
+	
 		console.log(this.conversationHistory);
 		return this.messageState.get("conversationHistory");
 	}
 
-	private processQuestion(question: string, code?: string, language?: string) {
+	public generateNewMessage(i: number, question: string): void{
+		this.messageState.update("conversationHistory", []);
+	
+		
+		
+		if (i === 0) {
+			//decompose
+			this.buildMessages("system", `Decompose the users query. Using the first person, elucidate the softwre the user wishes to create. You cannot ask questions or make up things. Build upon the users query to make a detailed statement in the first person and ensure you include any specific details the user included. Include the Original user query along with your outline. Format your response so that a GPT model can understand.`);
+			this.buildMessages("user", question);
+		
+		}
+		if (i === 1) {
+			//generate specs
+			this.buildMessages("system", "Take the users high level detail of the users query and create a detailed Software Requirements Specification that outlines the functional and non-functional requirements of the software, providing a detailed description of how the software should behave, what features it should have, and any constraints or limitations it may have. This needs to serve as the blueprint for the development that will be working on the users software program. The Software Requirements Specification needs to include each of the following sections: Introduction: Provides an overview of the users query and what exactly the user wants created. Include the original query along with a detailed summary. Scope: Defines the boundaries and limitations of the software, specifying what is included and what is not. Functional Requirements: Describes the specific features, functionalities, and behaviors of the software. It includes use cases, user stories, and detailed descriptions of how the software should respond to various inputs and scenarios. Non-functional Requirements: Specifies the qualities and characteristics of the software, such as performance, reliability, scalability, usability, security, and other constraints or quality attributes. System Architecture: Outlines the structure of the software, including its filenames, components, modules, and their interactions. Data Requirements: Defines the data structures, databases, and data flow within the software, including any data validation rules, constraints and table names. Assumptions and Dependencies: Lists any assumptions made during the requirements gathering process and identifies any external systems or dependencies the software relies upon. Filenames: At the end list all the filenames for each code file. For example, python should always start with a main.py, HTML should always start with index.html, ect. This specification will be used later as the basis for my implementation, so ensure your response is detailed and it is not a basic sheet, it needs to be a detailed spec sheet. Finally ensure all the language is formatted so a GPT Language model can understand as they will be the one designing the code, do not suggest things a GPT model cannot do.");
+			this.buildMessages("user", this.response);
+		}
+		if (i === 2) {
+			//reveiw specs
+			this.buildMessages("system", "Act as a pragmatic principal software engineer with a critical eye for detail and a deep understanding of programming practices, software requirements, and optimization strategies. You've been presented with a detailed Software Requirements Specification (SRS) document for an upcoming project. Your task is to thoroughly review this document, bearing in mind the following key points:Confirm that the specification is sufficiently detailed, allowing the software to be coded as precisely as intended. The SRS should adequately define the behavior, functionality, and interfaces of the software.Examine if there are any vital elements missing from the SRS that could potentially cause the software not to work as intended. This could include overlooked user requirements, data handling processes, security measures, or interface details.Evaluate the document to ascertain if any aspect of the software design can be optimized or simplified, without compromising the overall function and performance. Consider the maintainability, reusability, and efficiency of the proposed software components.Review whether the requirements leverage modern programming methodologies and make the best use of the latest version of the software language in question.After addressing these points, please redraft the SRS into a final low-level document. This updated SRS should be thoroughly detailed and contain every essential element such as the required functions, class definitions, file names, and other necessary components. The document should be devoid of commentary and instead focus solely on providing clear, unambiguous specifications so that a GPT model can program the code.");
+			this.buildMessages("user", this.response);
+		}
+		if (i === 3) {
+			//generate code
+			this.buildMessages("system", "Follow the Software Requirements Specification and create the final code for the user in their language of choice. Break down the requirement document into a  step by step process and reason with yourself to the make the right decisions to ensure the code is 100% corect and complete for your final response. Start with the main entrypoint file and work your way down line by line implementing all the logic. For python the main main should be called main.py Please note that the code needs to be fully functional and contain all the logic without omitting any code or using placeholders. Do not use any placeholders, you must respond with a 100% completed filename and code. Follow the language and framework appropriate best practices including error handling and logging. Prioritize classes then functions. Implement logging and debugging using the language default logging options. Ensure the code conforms to proper standards such as pep8, pylint for python. Utilize similar recommendations for other languages. Make sure that each file contain all imports, references, types, modules and other requirements.  The code should be fully functional without errors. Ensure that each file are compatible with each other or reference each other if needed. Before you finish, double check that all parts of the architecture is present in the files and the code can be executed without errors. Output the content of each file in seperate codeblocks using tripple backtiks.");
+			this.buildMessages("user", this.response);
+		}
+		if (i === 4) {
+			//review code
+			this.buildMessages("system", "Preface your response with 'QA:'Take on the role of an expert code reviewer. Your job is to analyze the code you were given and respond back with every line of code you were given that includes any modifications. You may not ask questions, and you must respond back with the entire code you were given. 1. First, analyze the code step by step to detect any syntax errors. 2. Next, analyze the code line by line to ensure there is no missing logic or placeholders, if there is create the logic. 3. Next analyze the code to determine if there is exception handling around all external API's and all calls that would produce errors. 4. Next respond back with the entire code that contains any fixes or logic, If you are unsure of the logic, implement a plausable solution. 6. Next, implement any missing exception handling. 7. Finally, implement debug logging around all outputs and variables using the default logging for the language the code is written in. Respond with the final output containing ALL the content and modifications and seperate each file into multiple codeblocks with tripple backtiks, even if the file did not change. Its imperritive that you respond with the entire code otherwise there will be errors.");
+			this.buildMessages("user", this.response);
+		}
+		/* if (i === 5) {
+			
+			this.buildMessages("system", "Act as a vetern code test implementer and create testing code for the users code files. Try to create a single response with all the testing that imports all the files if needed.");
+			this.buildMessages("user", this.response);
+		} */
+		
+		
+	}
+	
+	private processQuestion(question: string, code?: string, language?: string, imports?: string) {
 		if (code != null) {
 			// Add prompt prefix to the code if there was a code block selected
-			question = `${question}${language ? ` (The following code is in ${language} programming language.)` : ''}: ${code}`;
-		}
+			question = `${question}${language ? ` (This ${language} code uses these imports for reference, do not include in your response: ${imports}.)` : ''}: ${code}`;
+		}	console.log(question);
 		return question + '\r\n';
 	}
-
-	public async sendApiRequest(prompt: string, options: { command: string, code?: string, previousAnswer?: string, language?: string; }) {
+	
+	public async sendApiRequest(prompt: string, options: { command: string, code?: string, previousAnswer?: string, language?: string; imports?: string;}) {
+		this.prompt = prompt;
+		this.options = options;
 		if (this.inProgress) {
-			// The AI is still thinking... Do not accept more questions.
 			return;
 		}
-
-		this.logEvent("api-request-sent", { "autonimate-prompt": prompt, "autonimate.command": options.command, "autonimate.hasCode": String(!!options.code), "autonimate.hasPreviousAnswer": String(!!options.previousAnswer) });
-
+	
+		this.logEvent("api-request-sent", this.getAutonimateLogOptions(this.prompt, this.options));
+	
 		if (!await this.prepareConversation()) {
 			return;
 		}
-
-		
-		let question = this.processQuestion(prompt, options.code, options.language);
-
+	
+		let question = this.processQuestion(this.prompt, options.code, options.language, options.imports);
+	
+		this.updateConversationHistory(question, this.prompt, options);
+	
+		this.focusOnChatGPTView();
+	
+		this.response = "";
+		this.inProgress = true;
+		this.sendMessage({ type: 'showInProgress', inProgress: this.inProgress });
+		this.currentMessageId = this.getRandomId();
+	
+		this.sendMessage({ type: 'addQuestion', value: this.prompt, code: this.options.code, autoScroll: this.autoScroll });
+	
+		let openai = this.initializeOpenAI();
+	
+		try {
+			if (options.command === 'engineerQuestion') {
+				for (let i = 0; i < 5; i++) {
+					// Generate a new message for each iteration
+					this.generateNewMessage(i, question);
+					this.response = "";
+					this.stream = await openai.chat.completions.create(this.getChatCompletionOptions());
+					for await (const part of (this.stream as any)) {
+						this.processStreamPart(part);
+					}
+				}
+			} else {
+				this.stream = await openai.chat.completions.create(this.getChatCompletionOptions());
+				for await (const part of (this.stream as any)) {
+					this.processStreamPart(part);
+				}
+			}
+	
+			//if (this.subscribeToResponse) {
+			//    this.notifyUser();
+			//}
+	
+		} catch (error: any) {
+			this.handleError(error, this.prompt, this.options);
+		} finally {
+			this.inProgress = false;
+			this.sendMessage({ type: 'showInProgress', inProgress: this.inProgress });
+		}
+		//this.buildMessages("assistant", this.response);
+		this.handleContinuation(this.prompt, this.options);
+	}
+	
+	
+	private getAutonimateLogOptions(prompt: string, options: { command: string, code?: string, previousAnswer?: string, language?: string; }) {
+		return {
+			"autonimate-prompt": prompt,
+			"autonimate.command": options.command,
+			"autonimate.hasCode": String(!!options.code),
+			"autonimate.hasPreviousAnswer": String(!!options.previousAnswer)
+		};
+	}
+	
+	private updateConversationHistory(question: string, prompt: string, options: { command: string, code?: string, previousAnswer?: string, language?: string; }) {
 		if (this.questionCounter === 0) {
-			console.log("Forming Conversation History");
 			this.questionCounter++;
 			this.messageState.update("conversationHistory", []);
 			this.conversationHistory = this.buildMessages("user", question, this.systemPrompt, this.systemAppendPrompt);
-			this.logEvent("api-request-sent", {
-				"autonimate-prompt": prompt,
-				"autonimate.command": options.command,
-				"autonimate.hasCode": String(!!options.code),
-				"autonimate.hasPreviousAnswer": String(!!options.previousAnswer)
-			});
+			this.logEvent("api-request-sent", this.getAutonimateLogOptions(prompt, options));
 		} else {
-			console.log("Building Conversation History");
 			this.conversationHistory = this.buildMessages("user", question);
 			this.questionCounter++;
 		}
-
-
-
-		// If the ChatGPT view is not in focus/visible; focus on it to render Q&A
+	}
+	
+	private focusOnChatGPTView() {
 		if (this.webView == null) {
 			vscode.commands.executeCommand('autonimate.view.focus');
 		} else {
 			this.webView?.show?.(true);
 		}
-		this.response = "";
-		this.inProgress = true;
-		this.abortController = new AbortController();
-		this.sendMessage({ type: 'showInProgress', inProgress: this.inProgress, showStopButton: this.useGpt3 });
-		this.currentMessageId = this.getRandomId();
-
-		this.sendMessage({ type: 'addQuestion', value: prompt, code: options.code, autoScroll: this.autoScroll });
-		console.log("Messages sent to WebView");
-		console.log(this.conversationHistory);
-
+	}
+	
+	private initializeOpenAI() {
 		let openai = {} as any;
-
+	
 		if (this.method == "Azure") {
 			openai = new OpenAI({
 				apiKey: this.apiKey,
@@ -337,113 +430,130 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 				apiKey: this.apiKey,
 				baseURL: this.apiBaseUrl
 			});
-
 		}
-		try {
-			this.stream = await openai.chat.completions.create({
-				model: this.model || 'gpt-3.5-turbo-16k',
-				messages: this.conversationHistory,
-				temperature: this.temperature,
-				top_p: this.top_p,
-				stream: true,
-			});
-
-			for await (const part of (this.stream as any)) {
-				//if (this.inProgress === false) {
-				//	result.controller.abort()
-				//	break;
-				//}
-				if (part.error) {
-					this.sendMessage({ type: 'addError', value: part.error, autoScroll: this.autoScroll });
-					this.inProgress = false;
-					this.sendMessage({ type: 'showInProgress', inProgress: this.inProgress });
-				}
-
-				if (part.id) {
-					this.conversationId = part.id;
-					
-					if (part.choices[0].delta?.content && this.inProgress) {
-						this.response += part.choices[0].delta.content;
-					
-						this.sendMessage({ type: 'addResponse', value: this.response, id: this.conversationId, autoScroll: this.autoScroll });
-
-					}
-
-				} else {
-					console.log('Error: No delta.content found' + part);
-				}
-
-			}
-			const hasContinuation = ((this.response.split("```").length) % 2) === 0;
-			if (this.response === '{}' && !hasContinuation) {
-				this.buildMessages("assistant", this.response);
-				this.sendMessage({ type: 'stopGenerating', value: this.response, done: true, id: this.currentMessageId, autoScroll: this.autoScroll });
-			} else {
-				if (hasContinuation) {
-					this.response += " \r\n ```\r\n";
-					vscode.window.showInformationMessage("It looks like autonimate didn't complete their answer for your coding question. You can ask it to continue and combine the answers.", "Continue and combine answers")
-						.then(async (choice) => {
-							if (choice === "Continue and combine answers") {
-								this.sendApiRequest("Continue", { command: options.command, code: undefined, previousAnswer: this.response });
-							}
-						});
-				}
-			}
-
-
-
-
-
-			if (this.subscribeToResponse) {
-				vscode.window.showInformationMessage("Autonimate responded to your question.", "Open conversation").then(async () => {
-					await vscode.commands.executeCommand('autonimate.view.focus');
-				});
-			}
-
-
-		} catch (error: any) {
-			let message;
-			let apiMessage = error?.response?.data?.error?.message || error?.tostring?.() || error?.message || error?.name;
-
-			this.logError("api-request-failed");
-
-			if (error?.response?.status || error?.response?.statusText) {
-				message = `${error?.response?.status || ""} ${error?.response?.statusText || ""}`;
-
-				vscode.window.showErrorMessage("An error occured. If this is due to max_token you could try `ChatGPT: Clear Conversation` command and retry sending your prompt.", "Clear conversation and retry").then(async choice => {
-					if (choice === "Clear conversation and retry") {
-						await vscode.commands.executeCommand("autonimate.clearConversation");
-						await delay(250);
-						this.sendApiRequest(prompt, { command: options.command, code: options.code });
-					}
-				});
-			} else if (error.statusCode === 400) {
-				message = `Your model: '${this.model}' may be incompatible or one of your parameters is unknown. Reset your settings to default. (HTTP 400 Bad Request)`;
-
-			} else if (error.statusCode === 401) {
-				message = 'Make sure you are properly signed in. If you are using Browser Auto-login method, make sure the browser is open (You could refresh the browser tab manually if you face any issues, too). If you stored your API key in settings.json, make sure it is accurate. If you stored API key in session, you can reset it with `ChatGPT: Reset session` command. (HTTP 401 Unauthorized) Potential reasons: \r\n- 1.Invalid Authentication\r\n- 2.Incorrect API key provided.\r\n- 3.Incorrect Organization provided. \r\n See https://platform.openai.com/docs/guides/error-codes for more details.';
-			} else if (error.statusCode === 403) {
-				message = 'Your token has expired. Please try authenticating again. (HTTP 403 Forbidden)';
-			} else if (error.statusCode === 404) {
-				message = `Your model: '${this.model}' may be incompatible or you may have exhausted your ChatGPT subscription allowance. (HTTP 404 Not Found)`;
-			} else if (error.statusCode === 429) {
-				message = "Too many requests try again later. (HTTP 429 Too Many Requests) Potential reasons: \r\n 1. You exceeded your current quota, please check your plan and billing details\r\n 2. You are sending requests too quickly \r\n 3. The engine is currently overloaded, please try again later. \r\n See https://platform.openai.com/docs/guides/error-codes for more details.";
-			} else if (error.statusCode === 500) {
-				message = "The server had an error while processing your request, please try again. (HTTP 500 Internal Server Error)\r\n See https://platform.openai.com/docs/guides/error-codes for more details.";
-			}
-
-			if (apiMessage) {
-				message = `${message ? message + " " : ""}${apiMessage}`;
-			}
-
-			this.sendMessage({ type: 'addError', value: message, autoScroll: this.autoScroll });
-
-			return;
-		} finally {
+	
+		return openai;
+	}
+	
+	private getChatCompletionOptions() {
+		let options: {
+			model: string;
+			messages: any[];
+			temperature: number;
+			top_p: number;
+			stream: boolean;
+			max_tokens?: number; // add max_tokens as an optional property
+		} = {
+			model: this.model || 'gpt-3.5-turbo-16k',
+			messages: this.conversationHistory,
+			temperature: this.temperature,
+			top_p: this.top_p,
+			stream: true,
+		};
+	
+		if (this.max_tokens !== 0) {
+			options.max_tokens = this.max_tokens; //ignore max_tokens if 0
+		}
+	
+		return options;
+	}
+	
+	
+	private processStreamPart(part: any) {
+		if (part.error) {
+			this.sendMessage({ type: 'addError', value: part.error, autoScroll: this.autoScroll });
 			this.inProgress = false;
 			this.sendMessage({ type: 'showInProgress', inProgress: this.inProgress });
 		}
+	
+		if (part.id) {
+			this.conversationId = part.id;
+	
+			if (part.choices[0].delta?.content && this.inProgress) {
+				this.response += part.choices[0].delta.content;
+	
+				this.sendMessage({ type: 'addResponse', value: this.response, id: this.conversationId, autoScroll: this.autoScroll });
+	
+			}
+			
+		} else {
+			console.log('Error: No delta.content found' + part);
+		}
+		
 	}
+	
+	private handleContinuation(prompt: string, options: { command: string, code?: string, previousAnswer?: string, language?: string; }) {
+		const hasContinuation = ((this.response.split("```").length) % 2) === 0;
+		if (!hasContinuation) {
+			this.buildMessages("assistant", this.response);
+			this.sendMessage({ type: 'stopGenerating', value: this.response, done: true, id: this.currentMessageId, autoScroll: this.autoScroll });
+		} else {
+			if (hasContinuation) {
+				this.response += " \r\n ```\r\n";
+				vscode.window.showInformationMessage("It looks like autonimate didn't complete their answer for your coding question. You can ask it to continue and combine the answers.", "Continue and combine answers")
+					.then(async (choice) => {
+						if (choice === "Continue and combine answers") {
+							this.sendApiRequest("Continue", { command: options.command, code: undefined, previousAnswer: this.response });
+						}
+					});
+			}
+		}
+	}
+	
+	private notifyUser() {
+		vscode.window.showInformationMessage("Autonimate responded to your question.", "Open conversation").then(async () => {
+			await vscode.commands.executeCommand('autonimate.view.focus');
+		});
+	}
+	
+	private handleError(error: any, prompt: string, options: { command: string, code?: string, previousAnswer?: string, language?: string; }) {
+		let message;
+		let apiMessage = error?.response?.data?.error?.message || error?.tostring?.() || error?.message || error?.name;
+	
+		this.logError("api-request-failed");
+	
+		message = this.getErrorMessage(error, apiMessage);
+	
+		this.sendMessage({ type: 'addError', value: message, autoScroll: this.autoScroll });
+	
+		return;
+	}
+	
+	private getErrorMessage(error: any, apiMessage: string) {
+		let message;
+	
+		if (error?.response?.status || error?.response?.statusText) {
+			message = `${error?.response?.status || ""} ${error?.response?.statusText || ""}`;
+	
+			vscode.window.showErrorMessage("An error occured. If this is due to max_token you could try `ChatGPT: Clear Conversation` command and retry sending your prompt.", "Clear conversation and retry").then(async choice => {
+				if (choice === "Clear conversation and retry") {
+					await vscode.commands.executeCommand("autonimate.clearConversation");
+					await delay(250);
+					this.sendApiRequest(this.prompt, { command: this.options.command, code: this.options.code });
+				}
+			});
+		} else if (error.statusCode === 400) {
+			message = `Your model: '${this.model}' may be incompatible or one of your parameters is unknown. Reset your settings to default. (HTTP 400 Bad Request)`;
+	
+		} else if (error.statusCode === 401) {
+			message = 'Make sure you are properly signed in. If you are using Browser Auto-login method, make sure the browser is open (You could refresh the browser tab manually if you face any issues, too). If you stored your API key in settings.json, make sure it is accurate. If you stored API key in session, you can reset it with `ChatGPT: Reset session` command. (HTTP 401 Unauthorized) Potential reasons: \r\n- 1.Invalid Authentication\r\n- 2.Incorrect API key provided.\r\n- 3.Incorrect Organization provided. \r\n See https://platform.openai.com/docs/guides/error-codes for more details.';
+		} else if (error.statusCode === 403) {
+			message = 'Your token has expired. Please try authenticating again. (HTTP 403 Forbidden)';
+		} else if (error.statusCode === 404) {
+			message = `Your model: '${this.model}' may be incompatible or you may have exhausted your ChatGPT subscription allowance. (HTTP 404 Not Found)`;
+		} else if (error.statusCode === 429) {
+			message = "Too many requests try again later. (HTTP 429 Too Many Requests) Potential reasons: \r\n 1. You exceeded your current quota, please check your plan and billing details\r\n 2. You are sending requests too quickly \r\n 3. The engine is currently overloaded, please try again later. \r\n See https://platform.openai.com/docs/guides/error-codes for more details.";
+		} else if (error.statusCode === 500) {
+			message = "The server had an error while processing your request, please try again. (HTTP 500 Internal Server Error)\r\n See https://platform.openai.com/docs/guides/error-codes for more details.";
+		}
+	
+		if (apiMessage) {
+			message = `${message ? message + " " : ""}${apiMessage}`;
+		}
+	
+		return message;
+	}
+	
 
 	/**
 	 * Message sender, stores if a message cannot be delivered
@@ -507,11 +617,12 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 								
 								<h2>Features</h2>
 								<ul class="flex flex-col gap-3.5 text-xs">
+									<li class="p-3 border-2 border-zinc-700 rounded-md">BETA: Exclusive Autonomous Coding! Tell Autonimate what you want, and click the red send button!</li>
 									<li class="p-3 border-2 border-zinc-700 rounded-md">Advanced Prompting Support</li>
-  <li class="p-3 border-2 border-zinc-700 rounded-md">OpenAI and Azure Compatibility</li>
-  <li class="p-3 border-2 border-zinc-700 rounded-md">Copy, Create, and Diff Functionality</li>
-  <li class="p-3 border-2 border-zinc-700 rounded-md">Auto-Detect Syntax Highlighting</li>
-  <li class="p-3 border-2 border-zinc-700 rounded-md">Conversation History</li>
+									<li class="p-3 border-2 border-zinc-700 rounded-md">OpenAI and Azure Compatibility</li>
+									<li class="p-3 border-2 border-zinc-700 rounded-md">Copy, Create, and Diff Functionality</li>
+									<li class="p-3 border-2 border-zinc-700 rounded-md">Auto-Detect Syntax Highlighting</li>
+									<li class="p-3 border-2 border-zinc-700 rounded-md">Conversation History</li>
 								</ul>
 							</div>
 						</div>
@@ -529,7 +640,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 					<div class="flex-1 overflow-y-auto hidden" id="conversation-list" data-license="isc-gnc"></div>
 
 					<div id="in-progress" class="pl-4 pt-2 flex items-center hidden" data-license="isc-gnc">
-						<div class="typing">Thinking</div>
+						<div class="typing">Autonimating....</div>
 						<div class="spinner">
 							<div class="bounce1"></div>
 							<div class="bounce2"></div>
@@ -561,6 +672,9 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 
 							<button id="ask-button" title="Submit prompt" class="ask-button rounded-lg p-0.5">
 								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
+							</button>
+							<button id="autonimate-button" title="Autonimate" class="ask-button rounded-lg p-0.5">
+								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="red" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
 							</button>
 						</div>
 					</div>

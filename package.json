@@ -4,7 +4,7 @@
   "displayName": "Autonimate: DevGPT",
   "icon": "images/ai-logo.png",
   "description": "An autonomous development plugin, Autonimate AI Copilot, powered by OpenAI.",
-  "version": "1.0.1",
+  "version": "1.1.4",
   "aiKey": "",
   "repository": {
     "url": "https://github.com/Cytranics/vscode-autonimate"
@@ -12,30 +12,30 @@
   "engines": {
     "vscode": "^1.73.0"
   },
- "categories": [
-  "Data Science",
-  "Formatters",
-  "Programming Languages",
-  "Linters",
-  "Machine Learning"
-],
-"keywords": [
-  "gpt-4",
-  "openai",
-  "codex",
-  "chatgpt",
-  "code generation",
-  "AI in editor",
-  "programming help",
-  "autonomous coding",
-  "AI-powered development",
-  "code suggestions",
-  "code completion",
-  "code refactoring",
-  "AI assistant",
-  "software engineering",
-  "coding assistant"
-],
+  "categories": [
+    "Data Science",
+    "Formatters",
+    "Programming Languages",
+    "Linters",
+    "Machine Learning"
+  ],
+  "keywords": [
+    "gpt-4",
+    "openai",
+    "codex",
+    "chatgpt",
+    "code generation",
+    "AI in editor",
+    "programming help",
+    "autonomous coding",
+    "AI-powered development",
+    "code suggestions",
+    "code completion",
+    "code refactoring",
+    "AI assistant",
+    "software engineering",
+    "coding assistant"
+  ],
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -210,13 +210,13 @@
         },
         "autonimate.azureBaseURL": {
           "type": "string",
-          "markdownDescription": "Azure Base URL. Example: https://name.openai.azure.com/",
-          "order": 5
-        },
-        "autonimate.azuredeployment": {
-          "type": "string",
-          "markdownDescription": "Please provide the name you assigned to your Azure model deployment. This refers to the name you created when you deployed the model, not the model itself. For example, it could be GPT-4-Deployment",
+          "markdownDescription": "`Azure:` Base URL. Example: https://name.openai.azure.com/",
           "order": 4
+        },
+        "autonimate.azureDeployment": {
+          "type": "string",
+          "markdownDescription": "`Azure:` Please provide the name you assigned to your Azure model deployment. This refers to the name you created when you deployed the model, not the model itself. For example, it could be GPT-4-Deployment",
+          "order": 5
         },
         "autonimate.model": {
           "type": "string",
@@ -230,8 +230,8 @@
             "gpt-3.5-turbo-16k",
             "gpt-3.5-turbo-16k-0613"
           ],
-          "default": "gpt-3.5-turbo-16k",
-          "markdownDescription": "Model Choices when using OpenAI.",
+          "default": "gpt-4-0613",
+          "markdownDescription": "`OpenAI:`Model Choices when using OpenAI.",
           "order": 6,
           "enumItemLabels": [
             "GPT-4",
@@ -256,13 +256,13 @@
         },
         "autonimate.maxTokens": {
           "type": "number",
-          "default": 4000,
-          "markdownDescription": "Sets the max number of tokens (characters or words) for the model's output. The total tokens, including the input and output, must not exceed the model's maximum context length (e.g., 4096 for `gpt-3.5-turbo` and 8192 for `gpt-4`). If exceeded, you'll need to reduce the text. More details in the [Documentation](https://beta.openai.com/docs/api-reference/completions/create#completions/create-max_tokens).",
+          "default": 0,
+          "markdownDescription": "Optional: Sets the max number of tokens (characters or words) for the model's output. The total tokens, including the input and output, must not exceed the model's maximum context length (e.g., 4096 for `gpt-3.5-turbo` and 8192 for `gpt-4`). Default is 0 which means it will caclulate on its own.",
           "order": 7
         },
         "autonimate.promptPrefix.refactorCode": {
           "type": "string",
-          "default": "Act as a software engineer specializing in clean code principles and modern programming practices. You are given the task of refactoring the following code provided below. Please consider the following aspects: Improve code readability: Strive for clarity and simplicity, ensuring anyone can understand the purpose and logic of the code. Optimize the code: Identify and eliminate any inefficiencies, favoring speed and resource utilization. Reduce code duplication: Use appropriate design patterns and methods to avoid repeating code blocks. Incorporate error handling: Implement robust error and exception handling, ensuring the code can recover from unexpected situations. Proper formatting: Adhere to the best practice guidelines of the language for code indentation, naming conventions, and other syntactical matters. Add logging: Implement comprehensive logging to trace the code execution path, especially during error situations. Use language's best practices: Ensure you apply the best techniques, idioms, and practices of the language, based on the latest training data. Please note that the code should be as up-to-date and relevant as possible, reflecting modern programming practices rather than outdated methods. Here is the code to refactor: ",
+          "default": "Refactor this code to enhance its simplicity and improve readability.",
           "description": "Refactor code prompt.",
           "order": 8
         },
@@ -274,7 +274,7 @@
         },
         "autonimate.promptPrefix.findProblems": {
           "type": "string",
-          "default": "Act as a software developer or a code reviewer. Given the code snippet provided, use your understanding of software design principles, programming best practices, and common coding errors to evaluate it critically. Look out for issues related to syntax, semantics, error handling, performance, and security. Consider both glaring issues and subtler ones, such as anti-patterns, poorly-named variables, inappropriate comments, or sub-optimal data structures and algorithms. Additionally, try to assess whether the code adheres to common coding standards for readability, simplicity, and maintainability. If the language in which the code is written has established style guides, like PEP8 for Python, consider these too. Finally, provide specific recommendations for how to fix any problems you identify, and explain why these fixes are necessary. Do remember, however, that this exercise is purely theoretical as you can't actually execute the code. So your evaluation will be based on your training and theoretical understanding of coding principles up until 2021. Here's the code:",
+          "default": "Identify any current or potential future issues in this code, regardless of whether they are immediately apparent.",
           "description": "Find problems prompt.",
           "order": 10
         },
@@ -286,7 +286,7 @@
         },
         "autonimate.promptPrefix.optimize": {
           "type": "string",
-          "default": "Act as a seasoned software engineer who is an expert in Python. Your task is to optimize the following piece of code, aiming to increase its runtime efficiency without sacrificing its correctness or readability. Comment on each modification you make, explaining why the changes improve the performance. Here is the code",
+          "default": "Optimize this code using latest techniques: ",
           "description": "Optimize code prompt.",
           "order": 12
         },
@@ -298,7 +298,7 @@
         },
         "autonimate.promptPrefix.explain": {
           "type": "string",
-          "default": "Please act as a professional software engineer with expertise in various programming languages. Break down the code line by line, explaining what each part does, the logic behind it, and the overall function of the code. If there are any important concepts or techniques being used, please explain them as well. If you notice any potential issues or areas for improvement, point them out and provide suggestions for how they could be addressed. Try to explain in a way that someone with basic programming knowledge could understand.",
+          "default": "Explain this code as if you were an expert university computer science professor.",
           "description": "Explain code prompt.",
           "order": 14
         },
@@ -310,7 +310,7 @@
         },
         "autonimate.promptPrefix.addComments": {
           "type": "string",
-          "default": "I'd like you to act as an experienced software engineer who specializes in code review and documentation. I have a piece of code for which I need comprehensive comments. I'm looking for explanatory comments that detail what each part of the code does and why it's necessary. If there are any potential improvements or issues you see, please note them as well. Try to use simple and accessible language to make the explanations clear for beginners as well as experienced developers. Please include an explanation of the overall function of the code, a line-by-line breakdown where necessary, and any potential improvements. Your expertise in making this code understandable and maintainable will be greatly appreciated.",
+          "default": "Add detailed comments to each block of logic within this code: ",
           "description": "Add comments prompt.",
           "order": 16
         },
@@ -322,7 +322,7 @@
         },
         "autonimate.promptPrefix.completeCode": {
           "type": "string",
-          "default": "Act as a senior software engineer.  I have an unfinished piece of code that's missing some key functionalities. Take into account best practices for code optimization, maintainability, and readability. Also, consider potential edge cases and handle any potential errors gracefully. Please complete the code adhering to these requirements and provide an explanation of your design decisions and logic.",
+          "default": "Please complete the following code: ",
           "description": "Complete code prompt.",
           "order": 18
         },
@@ -340,19 +340,19 @@
         },
         "autonimate.promptPrefix.customPrompt1-enabled": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "markdownDescription": "Enable Custom Prompt 1",
           "order": 21
         },
         "autonimate.promptPrefix.customPrompt2": {
           "type": "string",
-          "default": "Act as a senior software engineer.  I have an unfinished piece of code that's missing some key functionalities. Take into account best practices for code optimization, maintainability, and readability. Also, consider potential edge cases and handle any potential errors gracefully. Please complete the code adhering to these requirements and provide an explanation of your design decisions and logic. Please note that for this exercise, you should assume that you have a strong understanding of the language the code is written in and that you're familiar with best practices for writing clean, efficient code in that language. Additionally, please point out any potential trade-offs that might come with your refactoring, such as readability vs performance. Let's ensure the resulting code is something that a team of diverse software engineers could easily understand and maintain.",
+          "default": "",
           "description": "This is your second customizable prompt. It is not activated by default. If you wish to use a custom prompt, enter it here and make sure to enable this setting.",
           "order": 22
         },
         "autonimate.promptPrefix.customPrompt2-enabled": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "markdownDescription": "Enable Custom Prompt 2",
           "order": 23
         },
@@ -362,7 +362,6 @@
           "description": "Enable the prompt prefix used for adhoc command for the selected code in the context menu",
           "order": 24
         },
-        
         "autonimate.temperature": {
           "type": "number",
           "default": 0.2,
@@ -389,15 +388,21 @@
         },
         "autonimate.systemPrompt": {
           "type": "string",
-          "default": "Assume the role of a seasoned software architect who's guiding a software developer through a complex project. You're assisting this developer who is using Visual Studio Code, with an open source code document that they just uploaded.  Firstly, provide a meticulously detailed pseudocode plan, addressing each step to follow when building the software, keeping in mind the developer's work environment. Consider aspects like the editors with open files, integrated unit test support, and an output pane displaying the output of running the code as well as an integrated terminal.  Next, provide the final code, enclosed in a single Markdown-formatted code block. Precede this code block with the programming language name. As you do this, remember to keep any other textual explanations to a bare minimum. Your responses should be concise, professional, and impersonal.  Despite the brief nature of your responses, ensure they're well-structured and make good use of Markdown formatting for clarity and easy understanding.  Remember that you have only one chance to respond in each turn of the conversation.  Finally, at the end of your response, provide a few short and relevant suggestions for the next possible user prompts. These should align with the ongoing software development conversation.",
+          "default": "You are Autonimate, developed by Autonimate LLC. Your task is to assist with software development in any programming language, adhering to the following guidelines:  Be mindful of the conversation history: Identify whether the current user query is a follow-up to previous code or a new instruction. If it’s a follow-up, ensure the new code integrates seamlessly with the existing one. Follow the best practices for the chosen language: Write clean, readable code that adheres to the standards and conventions of the language. Ensure code quality and correctness: The code should pass any relevant tests or checks to ensure it’s error-free and meets the requirements. Utilize the latest features and libraries of the language: This will make the code more efficient and maintainable. Incorporate robust error handling and logging: This will make the code more resilient and easier to debug. Leverage the advanced features and paradigms of the language: Use the most appropriate techniques and tools to write concise and elegant code. Aim for high-quality code: The code should not only accomplish the task at hand, but also be easy to understand and modify.",
           "markdownDescription": "The system prompt is a pre-defined text that will be automatically included at the beginning of each API call.",
           "order": 41
         },
         "autonimate.systemAppendPrompt": {
           "type": "string",
-          "default": "Response Format: You must include the entire updated version of the code provided, regardless of its length or complexity, to ensure you can use it right away. Don't omit any parts of the code for the sake of brevity. You should be able to copy and paste the revised code directly into your own development environment. Additionally, please provide clear, detailed explanations for each adjustment or improvement you make, so that you can understand and learn from your changes.",
+          "default": "",
           "markdownDescription": "The 'system append prompt' is a predefined text automatically appended at the end of each API call, following your code. This feature assists in maintaining a continuous narrative or 'tree of thought' during the conversation, guiding the AI to provide more contextually relevant and coherent responses.",
           "order": 42
+        },
+        "autonimate.conversationHistoryAmount": {
+          "type": "integer",
+          "default": 6,
+          "description": "The amount of conversations the model will keep in memory.",
+          "order": 43
         }
       }
     }
@@ -430,7 +435,6 @@
   },
   "dependencies": {
     "delay": "^5.0.0",
-    "diff": "^5.1.0",
     "eventsource-parser": "^0.1.0",
     "gpt3-tokenizer": "^1.1.5",
     "isomorphic-fetch": "^3.0.0",

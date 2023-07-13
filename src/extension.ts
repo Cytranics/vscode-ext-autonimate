@@ -18,6 +18,8 @@ const menuCommands = ["refactorCode", "findProblems", "optimize", "explain", "ad
 
 export async function activate(context: vscode.ExtensionContext) {
 	let adhocCommandPrefix: string = context.globalState.get("autonimate-adhoc-prompt") || '';
+	const editor = vscode.window.activeTextEditor;
+	const document = editor?.document;
 
 	const provider = new ChatGptViewProvider(context);
 	const view = vscode.window.registerWebviewViewProvider(
@@ -50,7 +52,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	const clearSession = vscode.commands.registerCommand("autonimate.clearSession", () => {
-		context.globalState.update("autonimate-gpt3-apiKey", null);
+		context.globalState.update("autonimate-apiKey", null);
 
 		provider?.clearSession();
 	});
@@ -83,7 +85,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			e.affectsConfiguration("autonimate.apiBaseUrl") ||
 			e.affectsConfiguration("autonimate.azureBaseURL") ||
 			e.affectsConfiguration("autonimate.model") ||
-			e.affectsConfiguration("autonimate.azuredeployment") ||
+			e.affectsConfiguration("autonimate.azureDeployment") ||
 			e.affectsConfiguration("autonimate.maxTokens") ||
 			e.affectsConfiguration("autonimate.temperature") ||
 			e.affectsConfiguration("autonimate.top_p") ||
@@ -158,12 +160,20 @@ export async function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-		const selection = editor.document.getText(editor.selection);
-		if (selection && prompt) {
-			console.log({ command, code: selection, language: editor.document.languageId });
-			provider?.sendApiRequest(prompt, { command, code: selection, language: editor.document.languageId });
+		const document = editor.document;
+		if (document) {
+			const text = document.getText();
+			const importRegex = /import\s+.*\s+from\s+['"].*['"]/g;
+			const imports = text.match(importRegex);
+
+			const selection = editor.document.getText(editor.selection);
+			if (selection && prompt) {
+				console.log({ command, code: selection, language: editor.document.languageId, imports });
+				provider?.sendApiRequest(prompt, { command, code: selection, language: editor.document.languageId, imports: imports ? imports.join('\n') : '' });
+			}
 		}
-	}));
+	}
+	));
 
 	context.subscriptions.push(view, freeText, resetThread, exportConversation, clearSession, configChanged, adhocCommand, generateCodeCommand, ...registeredCommands);
 
