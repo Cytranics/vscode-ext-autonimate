@@ -4,7 +4,7 @@
   "displayName": "Autonimate: DevGPT",
   "icon": "images/ai-logo.png",
   "description": "An autonomous development plugin, Autonimate AI Copilot, powered by OpenAI.",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "aiKey": "",
   "repository": {
     "url": "https://github.com/Cytranics/vscode-autonimate"
