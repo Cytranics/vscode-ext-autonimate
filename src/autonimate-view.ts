@@ -256,17 +256,19 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 	}
 
 	public buildMessages(role: string, content?: string, systemPrompt?: string, endingPrompt?: string): Array<{ role: string, content: string; }> {
+		//log all arguments
+		
 		this.logEvent('build-messages', role);
 		this.conversationHistory = this.messageState.get("conversationHistory") || [];
 
 		if (systemPrompt) {
-			this.conversationHistory.push({ role: "user", content: systemPrompt });
+			this.conversationHistory.push({ role: "system", content: systemPrompt });
 		}
 
 		this.conversationHistory.push({ role: role, content: content });
 
 		if (endingPrompt) {
-			this.conversationHistory.push({ role: "user", content: endingPrompt });
+			this.conversationHistory.push({ role: "assistant", content: endingPrompt });
 		}
 
 		// Check if conversation history has reached the limit
@@ -374,7 +376,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 
 		
 		try {
-			if (this.menuCommands.includes(options.command || options.command === "newCode")) {
+			if (options.command == "refactorCodeAuto" || options.command === "newCode") {
 				for (let i = 0; i < 5; i++) {
 					if (i === 0) {
 						this.messageState.update("conversationHistory", []);
@@ -406,7 +408,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 			this.sendMessage({ type: 'showInProgress', inProgress: this.inProgress });
 		}
 		//this.buildMessages("assistant", this.response);
-		this.handleContinuation(this.prompt, this.options);
+		this.handleContinuation(prompt, options);
 	}
 
 
@@ -424,7 +426,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 			this.questionCounter++;
 			this.messageState.update("conversationHistory", []);
 			this.conversationHistory = this.buildMessages("user", question, this.systemPrompt, this.systemAppendPrompt);
-			this.logEvent("api-request-sent", this.getAutonimateLogOptions(prompt, options));
+			this.logEvent("api-build-messages", this.getAutonimateLogOptions(prompt, options));
 		} else {
 			this.conversationHistory = this.buildMessages("user", question);
 			this.questionCounter++;
@@ -535,8 +537,9 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 	private handleError(error: any, prompt: string, options: { command: string, code?: string, previousAnswer?: string, language?: string; }) {
 		let message;
 		let apiMessage = error?.response?.data?.error?.message || error?.tostring?.() || error?.message || error?.name;
-
-		this.logError("api-request-failed");
+		//log the error using all the options:
+		this.logEvent("api-request-error", this.getAutonimateLogOptions(prompt, options));
+	
 
 		message = this.getErrorMessage(error, apiMessage);
 
