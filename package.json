@@ -4,7 +4,7 @@
   "displayName": "Autonimate: DevGPT",
   "icon": "images/ai-logo.png",
   "description": "An autonomous development plugin, Autonimate AI Copilot, powered by OpenAI.",
-  "version": "1.1.4",
+  "version": "1.1.6",
   "aiKey": "",
   "repository": {
     "url": "https://github.com/Cytranics/vscode-autonimate"
@@ -43,7 +43,6 @@
   "contributes": {
     "menus": {
       "editor/context": [
-
         {
           "command": "autonimate.refactorCode",
           "group": "autonimate@2",
@@ -197,17 +196,14 @@
           "type": "string",
           "default": "https://api.openai.com/v1",
           "markdownDescription": "OpenAI Base URL."
-          
         },
         "autonimate.azureBaseURL": {
           "type": "string",
           "markdownDescription": "`Azure:` Base URL. Example: https://name.openai.azure.com/"
-          
         },
         "autonimate.azureDeployment": {
           "type": "string",
           "markdownDescription": "`Azure:` Please provide the name you assigned to your Azure model deployment. This refers to the name you created when you deployed the model, not the model itself. For example, it could be GPT-4-Deployment"
-          
         },
         "autonimate.model": {
           "type": "string",
@@ -223,7 +219,6 @@
           ],
           "default": "gpt-4-0613",
           "markdownDescription": "`OpenAI:`Model Choices when using OpenAI.",
-          
           "enumItemLabels": [
             "GPT-4",
             "GPT-4 (June 13)",
@@ -248,151 +243,126 @@
         "autonimate.maxTokens": {
           "type": "number",
           "markdownDescription": "Optional: Sets the max number of tokens (characters or words) for the model's output. The total tokens, including the input and output, must not exceed the model's maximum context length (e.g., 4096 for `gpt-3.5-turbo` and 8192 for `gpt-4`). Default is 0 which means it will caclulate on its own."
-          
         },
         "autonimate.promptPrefix.refactorCode": {
           "type": "string",
           "default": "Refactor this code to enhance its simplicity and improve readability.",
           "description": "Refactor code prompt."
-          
         },
         "autonimate.promptPrefix.refactorCode-enabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable the refactor code context menu"
-          
         },
         "autonimate.promptPrefix.findProblems": {
           "type": "string",
           "default": "Identify any current or potential future issues in this code, regardless of whether they are immediately apparent.",
           "description": "Find problems prompt."
-          
         },
         "autonimate.promptPrefix.findProblems-enabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable the find problems context menu"
-          
         },
         "autonimate.promptPrefix.optimize": {
           "type": "string",
           "default": "Optimize this code using latest techniques: ",
           "description": "Optimize code prompt."
-          
         },
         "autonimate.promptPrefix.optimize-enabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable optimization context menu"
-          
         },
         "autonimate.promptPrefix.explain": {
           "type": "string",
           "default": "Explain this code as if you were an expert university computer science professor.",
           "description": "Explain code prompt."
-          
         },
         "autonimate.promptPrefix.explain-enabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable explain code context menu"
-          
         },
         "autonimate.promptPrefix.addComments": {
           "type": "string",
           "default": "Add detailed comments to each block of logic within this code: ",
           "description": "Add comments prompt."
-          
         },
         "autonimate.promptPrefix.addComments-enabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable add comments context menu"
-          
         },
         "autonimate.promptPrefix.completeCode": {
           "type": "string",
           "default": "Please complete the following code: ",
           "description": "Complete code prompt."
-          
         },
         "autonimate.promptPrefix.completeCode-enabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable complete code context menu"
-          
         },
         "autonimate.promptPrefix.customPrompt1": {
           "type": "string",
           "default": "",
           "description": "This is your customizable prompt. It is turned off by default. To use a custom prompt, please input it here and then enable this setting."
-          
         },
         "autonimate.promptPrefix.customPrompt1-enabled": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "Enable Custom Prompt 1"
-          
         },
         "autonimate.promptPrefix.customPrompt2": {
           "type": "string",
           "default": "",
           "description": "This is your second customizable prompt. It is not activated by default. If you wish to use a custom prompt, enter it here and make sure to enable this setting."
-          
         },
         "autonimate.promptPrefix.customPrompt2-enabled": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "Enable Custom Prompt 2"
-          
         },
         "autonimate.promptPrefix.adhoc-enabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable the prompt prefix used for adhoc command for the selected code in the context menu"
-          
         },
         "autonimate.temperature": {
           "type": "number",
           "default": 0.2,
           "markdownDescription": "Sets the sampling 'temperature'. Higher values result in riskier outputs, making the model more creative. A value of 0.9 is suggested for creative applications, while 0 is for tasks with a well-defined answer. It's advisable to adjust either this or `top_p`, not both. More info in the [Documentation](https://beta.openai.com/docs/api-reference/completions/create#completions/create-temperature)."
-          
         },
         "autonimate.top_p": {
           "type": "number",
           "default": 0,
           "markdownDescription": "Defines 'nucleus sampling', an alternative to temperature sampling. The model will consider tokens within the top `top_p` probability mass. For instance, 0.1 would consider the top 10% probability tokens. It's advisable to adjust either this or `temperature`, not both."
-          
         },
         "autonimate.response.showNotification": {
           "type": "boolean",
           "default": false,
           "description": "Enables notifications when the ChatGPT bot responds to your input."
-          
         },
         "autonimate.response.autoScroll": {
           "type": "boolean",
           "default": true,
           "description": "With this enabled, the extension will automatically scroll to the bottom when a new question or response is added. To change this, disable the setting."
-          
         },
         "autonimate.systemPrompt": {
           "type": "string",
           "default": "You are Autonimate, developed by Autonimate LLC. Your task is to assist with software development in any programming language, adhering to the following guidelines:  Be mindful of the conversation history: Identify whether the current user query is a follow-up to previous code or a new instruction. If it’s a follow-up, ensure the new code integrates seamlessly with the existing one. Follow the best practices for the chosen language: Write clean, readable code that adheres to the standards and conventions of the language. Ensure code quality and correctness: The code should pass any relevant tests or checks to ensure it’s error-free and meets the requirements. Utilize the latest features and libraries of the language: This will make the code more efficient and maintainable. Incorporate robust error handling and logging: This will make the code more resilient and easier to debug. Leverage the advanced features and paradigms of the language: Use the most appropriate techniques and tools to write concise and elegant code. Aim for high-quality code: The code should not only accomplish the task at hand, but also be easy to understand and modify.",
           "markdownDescription": "The system prompt is a pre-defined text that will be automatically included at the beginning of each API call."
-          
         },
         "autonimate.systemAppendPrompt": {
           "type": "string",
           "default": "",
           "markdownDescription": "The 'system append prompt' is a predefined text automatically appended at the end of each API call, following your code. This feature assists in maintaining a continuous narrative or 'tree of thought' during the conversation, guiding the AI to provide more contextually relevant and coherent responses."
-          
         },
         "autonimate.conversationHistoryAmount": {
           "type": "integer",
           "default": 6,
           "description": "The amount of conversations the model will keep in memory."
-          
         }
       }
     }
