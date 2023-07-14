@@ -17,6 +17,7 @@
     --input-padding-horizontal: 4px;
     --input-margin-vertical: 4px;
     --input-margin-horizontal: 0;
+    --vscode-editor-background: #00000;
 }
 
 body {
@@ -103,6 +104,9 @@ h4 {
     margin-left: 0 !important;
     margin-right: 0 !important;
     font-weight: bold !important;
+}
+#chat-button-wrapper {
+    background-image: #000000;
 }
 
 h5 {

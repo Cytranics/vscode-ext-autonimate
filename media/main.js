@@ -1,18 +1,3 @@
-/**
- * @author Ali Gençay
- * https://github.com/gencay/vscode-chatgpt
- *
- * @license
- * Copyright (c) 2022 - Present, Ali Gençay
- *
- * All rights reserved. Code licensed under the ISC license
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- */
-
-// @ts-nocheck
-
 (function () {
     const vscode = acquireVsCodeApi();
     let language = "";
@@ -24,7 +9,7 @@
         langPrefix: 'hljs language-',
         pedantic: false,
         gfm: true,
-        breaks: false,
+        breaks: true,
         sanitize: false,
         smartypants: false,
         xhtml: false
@@ -56,12 +41,6 @@
 
     const insertSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-license="isc-gnc" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5" /></svg>`;
 
-    const textSvg = `<svg xmlns="http://www.w3.org/2000/svg" stroke="currentColor" fill="none" data-license="isc-gnc" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" height="1em" width="1em" ><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`;
-
-    const closeSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-license="isc-gnc" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`;
-
-    const refreshSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-license="isc-gnc" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>`;
-    
     const diffSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M12 20V4m-7 9h14"></path></svg>`;
 
 
@@ -176,7 +155,7 @@
                 
                 rawValue = message.value
                 updatedValue = message.value.split("```").length % 2 === 1 ? message.value : message.value + "\n\n```\n\n";
-                updatedValue = message.value.replace(/`([^`]{1})`/g, '<code>$1</code>');                 
+                updatedValue = message.value.replace(/`([^`]{1})`/g, `<code class="hljs language-${language}">$1</code>`);                 
                 
                 
                 const wrappedCodeBlocks = [];
@@ -185,6 +164,9 @@
                 const lines = updatedValue.split("\n");
                 
                 lines.forEach((line, index) => {
+                    if (message.autoScroll) {
+                        list.lastChild?.scrollIntoView({ behavior: "smooth", block: "end", inline: "end" });
+                    }
                     const match = /^```(.*)$/.exec(line);
                     if (match) {
                         inCodeBlock = !inCodeBlock;
@@ -294,7 +276,7 @@
         const input = document.getElementById("question-input");
         if (input.value?.length > 0) {
             vscode.postMessage({
-                type: "engineerQuestion",
+                type: "newCode",
                 value: input.value,
             });
 

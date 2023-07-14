@@ -1,20 +1,7 @@
-/**
- * @author Ali Gençay
- * https://github.com/gencay/vscode-autonimate
- *
- * @license
- * Copyright (c) 2022 - Present, Ali Gençay
- *
- * All rights reserved. Code licensed under the ISC license
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- */
-
 import * as vscode from "vscode";
 import ChatGptViewProvider from './autonimate-view';
 
-const menuCommands = ["refactorCode", "findProblems", "optimize", "explain", "addComments", "completeCode", "generateCode", "customPrompt1", "customPrompt2", "adhoc"];
+
 
 export async function activate(context: vscode.ExtensionContext) {
 	let adhocCommandPrefix: string = context.globalState.get("autonimate-adhoc-prompt") || '';
@@ -22,6 +9,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	const document = editor?.document;
 
 	const provider = new ChatGptViewProvider(context);
+
+	provider.menuCommands = ["refactorCode", "refactorCodeAuto", "findProblems", "optimize", "explain", "addComments", "completeCode", "generateCode", "customPrompt1", "customPrompt2", "adhoc"];
+
 	const view = vscode.window.registerWebviewViewProvider(
 		"autonimate.view",
 		provider,
@@ -43,6 +33,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	});
 
+	
+
 	const resetThread = vscode.commands.registerCommand("autonimate.clearConversation", async () => {
 		provider?.sendMessage({ type: 'clearConversation' }, true);
 	});
@@ -56,51 +48,28 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		provider?.clearSession();
 	});
-
+	
+	function loadAllConfigurations() {
+		const config = vscode.workspace.getConfiguration("autonimate");
+		provider.subscribeToResponse = config.get("response.showNotification") || false;
+		provider.autoScroll = !!config.get("response.autoScroll");
+		provider.systemPrompt = config.get("systemPrompt") || '';
+		provider.systemAppendPrompt = config.get("systemAppendPrompt") || '';
+		provider.model = config.get("model");
+		provider.apiKey = config.get("apiKey") as string || '';
+		provider.apiBaseUrl = config.get("apiBaseUrl");
+		provider.azureBaseUrl = config.get("azureBaseURL");
+		provider.azureDeployment = config.get("azureDeployment");
+		provider.max_tokens = config.get("maxTokens");
+		provider.temperature = config.get("temperature");
+		provider.top_p = config.get("top_p");
+		provider.method = config.get("method");
+		provider.conversationHistoryAmount = config.get("conversationHistoryAmount") as number;
+	}
+	
 	const configChanged = vscode.workspace.onDidChangeConfiguration(e => {
-		if (e.affectsConfiguration('autonimate.response.showNotification')) {
-			provider.subscribeToResponse = vscode.workspace.getConfiguration("autonimate").get("response.showNotification") || false;
-		}
-
-		if (e.affectsConfiguration('autonimate.response.autoScroll')) {
-			provider.autoScroll = !!vscode.workspace.getConfiguration("autonimate").get("response.autoScroll");
-		}
-
-
-		if (e.affectsConfiguration('autonimate.systemPrompt')) {
-			provider.systemPrompt = vscode.workspace.getConfiguration("autonimate").get("systemPrompt") || '';
-		}
-
-		if (e.affectsConfiguration('autonimate.systemAppendPrompt')) {
-			provider.systemAppendPrompt = vscode.workspace.getConfiguration("autonimate").get("systemAppendPrompt") || '';
-		}
-
-
-
-		if (e.affectsConfiguration('autonimate.model')) {
-			provider.model = vscode.workspace.getConfiguration("autonimate").get("model");
-		}
-
-		if (
-			e.affectsConfiguration("autonimate.apiBaseUrl") ||
-			e.affectsConfiguration("autonimate.azureBaseURL") ||
-			e.affectsConfiguration("autonimate.model") ||
-			e.affectsConfiguration("autonimate.azureDeployment") ||
-			e.affectsConfiguration("autonimate.maxTokens") ||
-			e.affectsConfiguration("autonimate.temperature") ||
-			e.affectsConfiguration("autonimate.top_p") ||
-			e.affectsConfiguration("autonimate.systemPrompt") ||
-			e.affectsConfiguration("autonimate.systemAppendPrompt")
-		) {
-			provider.prepareConversation(true);
-		}
-
-		if (e.affectsConfiguration('autonimate.promptPrefix') || e.affectsConfiguration('autonimate.generateCode-enabled') || e.affectsConfiguration('autonimate.model') || e.affectsConfiguration('autonimate.method')) {
-			setContext();
-		}
-
-
-
+		loadAllConfigurations();
+		
 	});
 
 	const adhocCommand = vscode.commands.registerCommand("autonimate.adhoc", async () => {
@@ -151,9 +120,39 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	});
 
-	// Skip AdHoc - as it was registered earlier
-	const registeredCommands = menuCommands.filter(command => command !== "adhoc" && command !== "generateCode").map((command) => vscode.commands.registerCommand(`autonimate.${command}`, () => {
+	const registeredCommands = provider.menuCommands.filter(command => {
+		// Exclude commands that end with "Auto"
+		if (command.endsWith("Auto")) {
+			return false;
+		}
+	
+		// Exclude "adhoc" and "generateCode" commands
+		return command !== "adhoc" && command !== "generateCode";
+	}).map((command) => vscode.commands.registerCommand(`autonimate.${command}`, () => {
 		const prompt = vscode.workspace.getConfiguration("autonimate").get<string>(`promptPrefix.${command}`);
+		const editor = vscode.window.activeTextEditor;
+	
+		if (!editor) {
+			return;
+		}
+	
+		const document = editor.document;
+		if (document) {
+			const text = document.getText();
+			const importRegex = /import\s+.*\s+from\s+['"].*['"]/g;
+			const imports = text.match(importRegex);
+	
+			const selection = editor.document.getText(editor.selection);
+			if (selection && prompt) {
+				console.log({ command, code: selection, language: editor.document.languageId, imports });
+				provider?.sendApiRequest(prompt, { command, code: selection, language: editor.document.languageId, imports: imports ? imports.join('\n') : '' });
+			}
+		}
+	}));
+	
+
+	const registeredAutoCommands = provider.menuCommands.filter(command => command !== "adhoc" && command !== "generateCode").map((command) => vscode.commands.registerCommand(`autonimate.auto.${command}`, () => {
+	
 		const editor = vscode.window.activeTextEditor;
 
 		if (!editor) {
@@ -167,30 +166,27 @@ export async function activate(context: vscode.ExtensionContext) {
 			const imports = text.match(importRegex);
 
 			const selection = editor.document.getText(editor.selection);
-			if (selection && prompt) {
+			if (selection) {
 				console.log({ command, code: selection, language: editor.document.languageId, imports });
-				provider?.sendApiRequest(prompt, { command, code: selection, language: editor.document.languageId, imports: imports ? imports.join('\n') : '' });
+				provider?.sendApiRequest("", { command, code: selection, language: editor.document.languageId, imports: imports ? imports.join('\n') : '' });
 			}
 		}
 	}
 	));
 
+	
+
+
+
 	context.subscriptions.push(view, freeText, resetThread, exportConversation, clearSession, configChanged, adhocCommand, generateCodeCommand, ...registeredCommands);
 
 	const setContext = () => {
-		menuCommands.forEach(command => {
-			if (command === "generateCode") {
-
-				const modelName = vscode.workspace.getConfiguration("autonimate").get("model") as string;
-				const method = vscode.workspace.getConfiguration("autonimate").get("method") as string;
-			} else {
+		provider.menuCommands.forEach(command => {
 				const enabled = !!vscode.workspace.getConfiguration("autonimate.promptPrefix").get<boolean>(`${command}-enabled`);
 				vscode.commands.executeCommand('setContext', `${command}-enabled`, enabled);
-			}
+			
 		});
 	};
 
 	setContext();
 }
-
-export function deactivate() { }
