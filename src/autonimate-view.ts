@@ -327,6 +327,9 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		
 		if (functionName === "newCode") {
 			this.messageState.update("conversationHistory", []);
+			this.buildMessages("system", prompt);
+			this.buildMessages("user", question);
+			
 		}
 
 		if (promptIndex === 0) {
