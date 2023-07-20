@@ -1,6 +1,10 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## [7/19/2023]
+### Added
+
+- Feature: Added Code Action Fix Error
+
 
 ## [7/13/2023]
 More Autonimation coming!
