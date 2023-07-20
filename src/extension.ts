@@ -12,6 +12,48 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	provider.menuCommands = ["refactorCode", "refactorCodeAuto", "findProblems", "optimize", "explain", "addComments", "completeCode", "generateCode", "customPrompt1", "customPrompt2", "adhoc"];
 
+
+	const codeActionProvider = vscode.languages.registerCodeActionsProvider(
+		{ language: '*' },
+		{
+			provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext): vscode.CodeAction[] {
+				const importStatement = document.getText(range);
+				const error = context.diagnostics.find(diagnostic => diagnostic);
+	
+				if (!error) {
+					return [];
+				}
+	
+				const codeAction = new vscode.CodeAction(`Autonimate: Fix Error`, vscode.CodeActionKind.QuickFix);
+				codeAction.command = {
+					command: 'autonimate.codeAction',
+					title: 'Autonimate: Fix Error',
+					arguments: [importStatement, error.message]
+				};
+				return [codeAction];
+			}
+		}
+	);
+	
+	
+	const fixCodeAction = vscode.commands.registerCommand('autonimate.codeAction', (importStatement: string, errorMessage: string) => {
+		const editor = vscode.window.activeTextEditor;
+		if (editor) {
+			const currentLine = editor.selection.active.line;
+			const startLine = Math.max(currentLine - 10, 0);
+			const endLine = Math.min(currentLine + 10, editor.document.lineCount - 1);
+	
+			const start = new vscode.Position(startLine, 0);
+			const end = new vscode.Position(endLine, editor.document.lineAt(endLine).text.length);
+			const extendedSelection = new vscode.Selection(start, end);
+	
+			const selectedText = editor.document.getText(extendedSelection);
+			provider?.sendApiRequest("Please fix this error: " + errorMessage, { command: "codeAction", code: selectedText });
+		}
+	});
+	
+	
+	
 	const view = vscode.window.registerWebviewViewProvider(
 		"autonimate.view",
 		provider,
@@ -178,9 +220,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
 
 
-	context.subscriptions.push(view, freeText, resetThread, exportConversation, clearSession, configChanged, adhocCommand, generateCodeCommand, ...registeredCommands);
+	context.subscriptions.push(codeActionProvider, fixCodeAction, view, freeText, resetThread, exportConversation, clearSession, configChanged, adhocCommand, generateCodeCommand, ...registeredCommands);
 
-	const setContext = () => {
+	const setConetext = () => {
 		provider.menuCommands.forEach(command => {
 				const enabled = !!vscode.workspace.getConfiguration("autonimate.promptPrefix").get<boolean>(`${command}-enabled`);
 				vscode.commands.executeCommand('setContext', `${command}-enabled`, enabled);

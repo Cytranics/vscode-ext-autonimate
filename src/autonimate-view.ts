@@ -11,7 +11,6 @@
  * copies or substantial portions of the Software.
  */
 
-import { log } from "console";
 import delay from 'delay';
 import OpenAI from 'openai';
 import * as vscode from 'vscode';
