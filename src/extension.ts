@@ -222,7 +222,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(codeActionProvider, fixCodeAction, view, freeText, resetThread, exportConversation, clearSession, configChanged, adhocCommand, generateCodeCommand, ...registeredCommands);
 
-	const setConetext = () => {
+	const setContext = () => {
 		provider.menuCommands.forEach(command => {
 				const enabled = !!vscode.workspace.getConfiguration("autonimate.promptPrefix").get<boolean>(`${command}-enabled`);
 				vscode.commands.executeCommand('setContext', `${command}-enabled`, enabled);
