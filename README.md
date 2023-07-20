@@ -10,3 +10,5 @@ Experience unparalleled autonomous coding with Autonimate, the exclusive Visual 
 - **Built on the Success of ChatGPT**: Autonimate builds upon the beloved features of the retired ChatGPT extension, carrying its legacy forward.
 
 We value your feedback and suggestions as we continuously enhance this extension to provide the ultimate autonomous coding experience.
+
+Open Source - [Autonimate VS Code Ext](https://github.com/Cytranics/autonimate-vscode-ext)
