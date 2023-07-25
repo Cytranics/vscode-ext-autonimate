@@ -1,6 +1,12 @@
 # Changelog
 
 ## [7/19/2023]
+### Fixed
+
+- Fixed issue with Auto Refactoring not stopping when clicking the Stop Generating button.
+
+
+## [7/19/2023]
 ### Added
 
 - Feature: Added Code Action Fix Error
