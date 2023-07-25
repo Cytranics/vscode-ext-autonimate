@@ -50,6 +50,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 	private prompt: string = "";
 	private options: any = {};
 	public menuCommands: any = {};
+	private stopRequested = false;
 
 
 	/**
@@ -188,21 +189,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		}
 	}
 
-	private stopGenerating(): void {
-		(this.stream as any).controller.abort();
-		this.stream = undefined;
-		this.inProgress = false;
-		this.sendMessage({ type: 'showInProgress', inProgress: this.inProgress });
-		this.sendMessage({ type: 'addResponse', value: this.response, done: true, id: this.currentMessageId, autoScroll: this.autoScroll });
-		this.logEvent("stopped-generating");
-	}
 
-	public clearSession(): void {
-		this.stopGenerating();
-		this.messageState.update("conversationHistory", []);
-		this.conversationId = undefined;
-		this.logEvent("cleared-session");
-	}
 
 
 
@@ -301,9 +288,11 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 			// Add more prompts for generateSpecs here
 		],
 		"fixCode": [
-			"Act as a pragmatic principal software engineer...",
-			"Second prompt for reviewSpecs...",
-			// Add more prompts for reviewSpecs here
+			"Please Analyze the code you are given by the user. Respond as 3 different code engineers, each with different plans on how they would fix the code. Each engineer needs to respond with a numbered list on how they will accomplish the fix like this. 1.\n2.\n3\n4.\n5. ect...",
+			"Please please rate each engineers plan on a scale from 1-10, and provide a list of 5 critizisms for each plan. 1 being the worst and 10 being the best. The ratings should take into account speed, readability and maintainability.",
+			"Now please respond with a detailed numbred step by step plan on how to fix the code. Ensure the plan contains error handling and conforms to the programming language best practices. Respond with the full entire numbered tasklist/plan now: Example:  1.\n2.\n3\n4.\n5. ect...",
+			"Now please generate the fixed code based off the plan.",
+			"Please review the code to ensure it contains all the logic, and does not omit any logic or code. If it does, please respond back with the full entire code. If the code is fine, please respond back with the full entire code so the user can copy and paste.",
 		],
 		"debugCode": [
 			"Follow the Software Requirements Specification...",
@@ -378,8 +367,9 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 
 		
 		try {
-			if (options.command == "refactorCodeAuto" || options.command === "newCode") {
-				for (let i = 0; i < 5; i++) {
+			if ((options.command == "refactorCodeAuto" || options.command === "newCode") && this.inProgress === true) {
+			
+				for (let i = 0; i < 5 && !this.stopRequested; i++) {
 					if (i === 0) {
 						this.messageState.update("conversationHistory", []);
 					}
@@ -407,6 +397,7 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 			this.handleError(error, this.prompt, this.options);
 		} finally {
 			this.inProgress = false;
+			this.stopRequested = false;
 			this.sendMessage({ type: 'showInProgress', inProgress: this.inProgress });
 		}
 		//this.buildMessages("assistant", this.response);
@@ -511,6 +502,22 @@ export default class ChatGptViewProvider implements vscode.WebviewViewProvider {
 		}   
 	}
 
+	private stopGenerating(): void {
+		this.stopRequested = true;
+		(this.stream as any).controller.abort();
+		this.stream = undefined;
+		this.inProgress = false;
+		this.sendMessage({ type: 'showInProgress', inProgress: this.inProgress });
+		this.sendMessage({ type: 'addResponse', value: "", done: true, id: this.currentMessageId, autoScroll: this.autoScroll });
+		this.logEvent("stopped-generating");
+	}
+
+	public clearSession(): void {
+		this.stopGenerating();
+		this.messageState.update("conversationHistory", []);
+		this.conversationId = undefined;
+		this.logEvent("cleared-session");
+	}
 
 	private handleContinuation(prompt: string, options: { command: string, code?: string, previousAnswer?: string, language?: string; }) {
 		const hasContinuation = ((this.response.split("```").length) % 2) === 0;
